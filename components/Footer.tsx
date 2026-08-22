@@ -10,12 +10,12 @@ const footerLinks = {
   services: [
     { label: "Accounts & Compliance", href: "/services/accounting-compliance" },
     { label: "CFO as a Service", href: "/services/cfo-as-a-service" },
-    { label: "Capital Advisory", href: "/services/capital-advisory" },
+    // { label: "Capital Advisory", href: "/services/capital-advisory" },
     { label: "ROI Calculator", href: "/calculator" },
   ],
   company: [
     { label: "About Us", href: "/about" },
-    { label: "Blog", href: "/blog" },
+    // { label: "Blog", href: "/blog" },
     { label: "FAQ", href: "/faq" },
     { label: "Resources", href: "/resources" },
   ],

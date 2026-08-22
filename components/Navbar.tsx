@@ -17,7 +17,7 @@ const navLinks = [
     ]
   },
   { label: "Calculator", href: "/calculator" },
-  { label: "Blog", href: "/blog" },
+  // { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
   { 
     label: "Resources", 

@@ -47,19 +47,35 @@ create trigger set_posts_updated_at
 alter table public.posts enable row level security;
 
 -- Policies for posts table:
--- Public can read all published posts
+-- 1. Allow reading posts (public website + admin panel)
+drop policy if exists "Allow public read access to posts" on public.posts;
 drop policy if exists "Allow public read access to published posts" on public.posts;
-create policy "Allow public read access to published posts" 
+create policy "Allow public read access to posts" 
 on public.posts for select 
-using (published = true);
+to public 
+using (true);
 
--- Authenticated users (admin) have full CRUD access to all posts (including drafts)
-drop policy if exists "Allow authenticated users full access to posts" on public.posts;
-create policy "Allow authenticated users full access to posts" 
-on public.posts for all 
-to authenticated 
+-- 2. Allow inserting new blog posts
+drop policy if exists "Allow public insert on posts" on public.posts;
+create policy "Allow public insert on posts" 
+on public.posts for insert 
+to public 
+with check (true);
+
+-- 3. Allow updating blog posts
+drop policy if exists "Allow public update on posts" on public.posts;
+create policy "Allow public update on posts" 
+on public.posts for update 
+to public 
 using (true) 
 with check (true);
+
+-- 4. Allow deleting blog posts
+drop policy if exists "Allow public delete on posts" on public.posts;
+create policy "Allow public delete on posts" 
+on public.posts for delete 
+to public 
+using (true);
 
 -- 3. Storage Bucket for Blog Images
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -239,4 +255,59 @@ on public.case_studies for delete
 to public
 using (true);
 
+-- ==============================================================================
+-- 7. Create Compliance Calendars Table (Dedicated Monthly Calendar Posts)
+-- ==============================================================================
+create table if not exists public.compliance_calendars (
+  id uuid default gen_random_uuid() primary key,
+  slug text unique not null,
+  title text not null,
+  excerpt text not null,
+  content text not null,
+  category text not null default 'Monthly Calendar',
+  author text not null default 'Finsaar Team',
+  date date not null default current_date,
+  published boolean not null default true,
+  image text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
+-- Index for fast lookup by slug
+create index if not exists idx_compliance_calendars_slug on public.compliance_calendars (slug);
+create index if not exists idx_compliance_calendars_published on public.compliance_calendars (published);
+
+-- Auto-update updated_at timestamp trigger for compliance_calendars
+drop trigger if exists set_compliance_calendars_updated_at on public.compliance_calendars;
+create trigger set_compliance_calendars_updated_at
+  before update on public.compliance_calendars
+  for each row
+  execute function public.handle_updated_at();
+
+-- Enable RLS & Policies for Compliance Calendars
+alter table public.compliance_calendars enable row level security;
+
+drop policy if exists "Allow public read access to compliance_calendars" on public.compliance_calendars;
+create policy "Allow public read access to compliance_calendars" 
+on public.compliance_calendars for select 
+to public 
+using (true);
+
+drop policy if exists "Allow public insert on compliance_calendars" on public.compliance_calendars;
+create policy "Allow public insert on compliance_calendars" 
+on public.compliance_calendars for insert 
+to public 
+with check (true);
+
+drop policy if exists "Allow public update on compliance_calendars" on public.compliance_calendars;
+create policy "Allow public update on compliance_calendars" 
+on public.compliance_calendars for update 
+to public 
+using (true) 
+with check (true);
+
+drop policy if exists "Allow public delete on compliance_calendars" on public.compliance_calendars;
+create policy "Allow public delete on compliance_calendars" 
+on public.compliance_calendars for delete 
+to public 
+using (true);

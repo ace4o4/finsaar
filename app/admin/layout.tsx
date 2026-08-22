@@ -144,9 +144,9 @@ export default function AdminLayout({
     },
     {
       label: "Compliance Calendar",
-      href: "/admin/compliance-calendar",
+      href: "/admin/compliance",
       icon: Calendar,
-      active: pathname.startsWith("/admin/compliance-calendar"),
+      active: pathname.startsWith("/admin/compliance"),
     },
     {
       label: "Case Studies",

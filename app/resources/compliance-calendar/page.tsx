@@ -5,20 +5,23 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
 import PageHeader from "@/components/ui/PageHeader";
-import { ComplianceGroup, getGroupedComplianceDeadlines } from "@/lib/compliance-service";
+import { CalendarPost } from "@/lib/calendar-data";
+import { getCalendarPosts } from "@/lib/calendar-service";
+import Link from "next/link";
+import { ArrowRight, Calendar as CalendarIcon, Clock } from "lucide-react";
 
 export default function ComplianceCalendarPage() {
   const [contactOpen, setContactOpen] = useState(false);
-  const [complianceDeadlines, setComplianceDeadlines] = useState<ComplianceGroup[]>([]);
+  const [calendars, setCalendars] = useState<CalendarPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await getGroupedComplianceDeadlines();
-        setComplianceDeadlines(data);
+        const data = await getCalendarPosts({ includeDrafts: false });
+        setCalendars(data);
       } catch (err) {
-        console.error("Failed to load compliance deadlines:", err);
+        console.error("Failed to load calendars:", err);
       } finally {
         setLoading(false);
       }
@@ -29,48 +32,73 @@ export default function ComplianceCalendarPage() {
   return (
     <>
       <Navbar onOpenContact={() => setContactOpen(true)} />
-      <main className="flex-1 bg-[#FBF9F6] min-h-screen">
+      <main className="flex-1 bg-[#FBF9F6] min-h-screen pb-24">
         <PageHeader
           badge="Resources"
-          title={<>Compliance <span className="text-copper">Calendar</span></>}
-          subtitle="Never miss a deadline. A quick overview of standard monthly, quarterly, and annual compliance deadlines in India."
+          title={<>Compliance <span className="text-copper">Calendars</span></>}
+          subtitle="Monthly regulatory filings, tax submissions, and reporting deadlines."
         />
 
-        <section className="py-12 lg:py-20 relative z-10 -mt-10">
+        <section className="relative z-10 -mt-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto min-h-[500px]">
-              <div className="space-y-16 lg:space-y-24">
-                {complianceDeadlines.map((block, i) => (
-                  <div key={i} className="relative">
-                    <div className="flex items-center gap-6 mb-10">
-                      <h3 className="font-heading text-3xl md:text-4xl font-bold text-navy tracking-tight">{block.month}</h3>
-                      <div className="flex-1 h-[1px] bg-sand/40" />
-                    </div>
-                    
-                    <div className="flex flex-col bg-white rounded-[32px] p-6 lg:p-10 shadow-[0_20px_40px_-15px_rgba(20,33,58,0.05)] border border-black/5">
-                      {block.items.map((item, j) => (
-                        <div 
-                          key={j} 
-                          className="group flex flex-col md:flex-row md:items-center gap-4 md:gap-8 lg:gap-16 py-6 border-b border-sand/30 last:border-0 hover:bg-[#FBF9F6] -mx-6 px-6 lg:-mx-10 lg:px-10 transition-colors duration-300 cursor-default relative overflow-hidden"
-                        >
-                          {/* Accent line on hover */}
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-copper opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          
-                          <div className="w-full md:w-[240px] lg:w-[280px] shrink-0">
-                            <span className="inline-flex items-center gap-2 font-heading font-semibold text-2xl lg:text-3xl text-navy group-hover:text-copper transition-colors duration-300 leading-tight">
-                              {item.date}
+            <div className="flex flex-col lg:flex-row gap-12">
+              
+              {/* Main Content Area */}
+              <div className="flex-1">
+                {loading ? (
+                  <div className="flex justify-center items-center py-24">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy"></div>
+                  </div>
+                ) : calendars.length === 0 ? (
+                  <div className="bg-white rounded-[24px] p-12 text-center shadow-sm border border-black/5">
+                    <CalendarIcon className="w-12 h-12 text-navy/20 mx-auto mb-4" />
+                    <h3 className="font-heading text-2xl font-bold text-navy mb-2">No Calendars Yet</h3>
+                    <p className="text-navy/70">Check back soon for upcoming compliance deadlines.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {calendars.map((cal) => (
+                      <div 
+                        key={cal.slug} 
+                        className="group flex flex-col md:flex-row bg-white rounded-[24px] p-6 lg:p-8 shadow-sm hover:shadow-md border border-black/5 transition-all duration-300"
+                      >
+                        {/* Month Badge */}
+                        <div className="w-full md:w-48 shrink-0 mb-6 md:mb-0 flex flex-col justify-center border-r border-sand/40 pr-6">
+                          <span className="font-heading font-bold text-3xl text-navy uppercase leading-none">
+                            {new Date(cal.date).toLocaleDateString("en-US", { month: "short" })}
+                          </span>
+                          <span className="font-heading font-semibold text-2xl text-navy/50">
+                            {new Date(cal.date).toLocaleDateString("en-US", { year: "numeric" })}
+                          </span>
+                        </div>
+                        
+                        {/* Details */}
+                        <div className="flex-1 md:pl-8 flex flex-col justify-center">
+                          <h3 className="font-heading text-xl lg:text-2xl font-bold text-navy mb-2 group-hover:text-copper transition-colors">
+                            {cal.title}
+                          </h3>
+                          <p className="text-navy/70 mb-4 line-clamp-2">
+                            {cal.excerpt || "Monthly regulatory filings, tax submissions, and reporting deadlines."}
+                          </p>
+                          <div className="flex items-center justify-between mt-auto">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-[#FBF9F6] text-navy px-3 py-1.5 rounded-full border border-sand">
+                              <Clock className="w-3.5 h-3.5" />
+                              Status: Upcoming
                             </span>
-                          </div>
-                          <div className="flex-1">
-                            <span className="font-body text-lg lg:text-xl text-navy/70 group-hover:text-navy transition-colors duration-300">
-                              {item.task}
-                            </span>
+                            
+                            <Link 
+                              href={`/resources/compliance-calendar/${cal.slug}`}
+                              className="inline-flex items-center gap-2 font-medium text-copper hover:text-navy transition-colors text-sm lg:text-base"
+                            >
+                              View Calendar
+                              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                            </Link>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
