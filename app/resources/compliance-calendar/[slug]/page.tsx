@@ -13,11 +13,12 @@ import { getCalendarPostBySlug, getCalendarPosts } from "@/lib/calendar-service"
 import { ComplianceCalendarDetailClient } from "./ClientPage";
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await getCalendarPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getCalendarPostBySlug(slug);
 
   if (!post) {
     return {
@@ -47,7 +48,8 @@ export async function generateStaticParams() {
 }
 
 export default async function ComplianceCalendarDetailPage({ params }: Props) {
-  const post = await getCalendarPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getCalendarPostBySlug(slug);
 
   if (!post || !post.published) {
     notFound();
