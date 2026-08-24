@@ -113,19 +113,61 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
             </div>
           )}
 
-          <div className="max-w-5xl mx-auto bg-white rounded-[32px] p-8 md:p-12 lg:p-16 shadow-sm border border-black/5 relative z-0 mt-8">
-            <div className="prose prose-lg prose-slate max-w-none 
-              prose-headings:font-heading prose-headings:font-bold prose-headings:text-navy
-              prose-a:text-copper hover:prose-a:text-copper/80
-              prose-p:font-body prose-p:text-navy/80 prose-p:leading-relaxed
-              prose-li:text-navy/80
-              prose-strong:text-navy
-              prose-table:w-full prose-table:border-collapse
-              prose-th:bg-navy prose-th:text-white prose-th:font-heading prose-th:p-4 prose-th:text-left
-              prose-td:p-4 prose-td:border-b prose-td:border-sand/40 prose-td:text-navy/80
-              prose-tr:hover:bg-[#FBF9F6] prose-tr:transition-colors"
+          <div className="max-w-5xl mx-auto bg-white rounded-[40px] p-8 md:p-14 lg:p-20 shadow-[0_20px_60px_-15px_rgba(20,33,58,0.05)] border border-black/5 relative z-0 mt-8 mb-20">
+            <div className="prose prose-lg max-w-none 
+              prose-p:font-body prose-p:text-navy/80 prose-p:leading-relaxed prose-p:mb-6
+              prose-ul:list-disc prose-ul:pl-5
+              prose-li:text-navy/80 prose-li:mb-2
+              prose-strong:text-navy prose-strong:font-bold
+              prose-hr:border-sand/60 prose-hr:my-16"
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]} 
+                rehypePlugins={[rehypeRaw]}
+                components={{
+                  h2: ({node, ...props}) => (
+                    <h2 className="font-heading text-3xl md:text-5xl font-bold text-navy mt-16 mb-8 tracking-tight" {...props} />
+                  ),
+                  h3: ({node, ...props}) => (
+                    <h3 className="font-heading text-2xl md:text-3xl font-semibold text-navy mt-14 mb-6 flex items-center gap-3" {...props} />
+                  ),
+                  table: ({node, ...props}) => (
+                    <div className="w-full my-12 bg-white rounded-[24px] border border-sand/60 shadow-[0_8px_30px_rgba(20,33,58,0.04)] overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[700px]" {...props} />
+                      </div>
+                    </div>
+                  ),
+                  thead: ({node, ...props}) => (
+                    <thead className="bg-navy text-white" {...props} />
+                  ),
+                  th: ({node, ...props}) => (
+                    <th className="px-8 py-6 font-heading font-semibold text-sm md:text-base uppercase tracking-widest text-white/90 border-b border-white/10" {...props} />
+                  ),
+                  tbody: ({node, ...props}) => (
+                    <tbody className="divide-y divide-sand/60" {...props} />
+                  ),
+                  tr: ({node, ...props}) => (
+                    <tr className="hover:bg-[#FBF9F6] transition-colors duration-300 group" {...props} />
+                  ),
+                  td: ({node, ...props}) => (
+                    <td className="px-8 py-6 text-navy/80 font-body align-top text-base group-hover:text-navy transition-colors 
+                      [&:first-child>strong]:bg-copper/10 [&:first-child>strong]:text-copper [&:first-child>strong]:px-4 [&:first-child>strong]:py-1.5 [&:first-child>strong]:rounded-full [&:first-child>strong]:text-xs [&:first-child>strong]:font-bold [&:first-child>strong]:tracking-wider [&:first-child>strong]:uppercase [&:first-child]:whitespace-nowrap
+                      [&:nth-child(2)]:font-semibold [&:nth-child(2)]:text-navy [&:nth-child(2)]:whitespace-nowrap" 
+                      {...props} 
+                    />
+                  ),
+                  blockquote: ({node, ...props}) => (
+                    <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-copper/5 to-transparent border border-copper/20 p-8 md:p-10 my-12 shadow-sm">
+                      <div className="absolute top-0 left-0 w-2 h-full bg-copper" />
+                      <blockquote className="relative z-10 text-navy/90 font-medium text-xl leading-relaxed m-0 p-0" {...props} />
+                    </div>
+                  ),
+                  a: ({node, ...props}) => (
+                    <a className="text-copper font-semibold hover:text-copper-dark underline decoration-2 underline-offset-4 decoration-copper/30 hover:decoration-copper transition-all" {...props} />
+                  )
+                }}
+              >
                 {post.content}
               </ReactMarkdown>
             </div>
