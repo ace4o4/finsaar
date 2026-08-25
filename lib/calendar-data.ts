@@ -13,6 +13,7 @@ export interface CalendarPost {
 
 export const calendarPosts: CalendarPost[] = [
   {
+    id: "00000000-0000-0000-0000-000000000001",
     slug: "august-2026-deadlines",
     title: "Compliance Calendar August 2026 - GST, TDS, PF, ESI Deadlines",
     excerpt: "August 2026 brings critical compliance requirements for Indian businesses, startups, and LLPs. From GST filings to Income Tax and MCA updates, ensure you mark these dates on your calendar to avoid penalties.",

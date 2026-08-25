@@ -107,7 +107,8 @@ export async function getCalendarPostById(id: string): Promise<CalendarPost | nu
   }
 
   if (!isSupabaseConfigured || !supabase) {
-    return null; // Fallbacks don't have UUIDs
+    const fallback = fallbackPosts.find((p) => p.id === id);
+    return fallback || null;
   }
 
   try {
@@ -121,13 +122,15 @@ export async function getCalendarPostById(id: string): Promise<CalendarPost | nu
       if (error && error.code !== 'PGRST116') {
         console.error(`Supabase getCalendarPostById error for id ${id}:`, error);
       }
-      return null;
+      const fallback = fallbackPosts.find((p) => p.id === id);
+      return fallback || null;
     }
 
     return mapDbCalendarToCalendarPost(data as DatabaseCalendar);
   } catch (err) {
     console.error(`Error fetching calendar post by id ${id}:`, err);
-    return null;
+    const fallback = fallbackPosts.find((p) => p.id === id);
+    return fallback || null;
   }
 }
 

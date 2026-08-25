@@ -82,23 +82,23 @@ export default function AdminComplianceCalendarPage() {
   });
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="font-heading text-2xl font-bold text-[#14213A]">
             Compliance Calendars
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-[#7A7F8C] mt-1 text-sm">
             Manage your monthly compliance calendars and due date postings.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/admin/compliance/new"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors font-medium shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#14213A] hover:bg-[#1e3256] text-white rounded-xl text-sm font-heading font-semibold shadow-md shadow-[#14213A]/10 transition-all"
           >
-            <PlusCircle className="w-5 h-5" />
+            <PlusCircle className="w-4 h-4 text-[#B5723B]" />
             New Calendar
           </Link>
         </div>
@@ -106,73 +106,74 @@ export default function AdminComplianceCalendarPage() {
 
       {actionMessage && (
         <div
-          className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
+          className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-sm ${
             actionMessage.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
-          {actionMessage.type === "success" ? (
-            <CheckCircle className="w-5 h-5 mt-0.5 text-green-600" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 mt-0.5 text-red-600" />
-          )}
-          <p>{actionMessage.text}</p>
+          <span>{actionMessage.text}</span>
+          <button
+            onClick={() => setActionMessage(null)}
+            className="text-xs font-semibold opacity-70 hover:opacity-100"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E7E4DC] p-2 flex flex-col md:flex-row items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7F8C]" />
           <input
             type="text"
             placeholder="Search calendars..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-11 pr-4 py-2.5 bg-transparent text-sm focus:outline-none focus:ring-0 text-[#14213A]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E7E4DC] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-[#FAFAF8] border-b border-[#E7E4DC]">
+                <th className="py-4 px-6 text-[10px] font-bold text-[#7A7F8C] uppercase tracking-widest">
                   Title & Month
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="py-4 px-6 text-[10px] font-bold text-[#7A7F8C] uppercase tracking-widest">
                   Status
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="py-4 px-6 text-[10px] font-bold text-[#7A7F8C] uppercase tracking-widest">
                   Date
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                <th className="py-4 px-6 text-[10px] font-bold text-[#7A7F8C] uppercase tracking-widest text-right">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-[#E7E4DC]">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-                    <p className="mt-2 text-slate-500">Loading calendars...</p>
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#14213A]"></div>
+                    <p className="mt-2 text-[#7A7F8C] text-sm">Loading calendars...</p>
                   </td>
                 </tr>
               ) : filteredPosts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center">
-                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Search className="w-8 h-8 text-slate-400" />
+                    <div className="w-16 h-16 bg-[#FAFAF8] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#E7E4DC]">
+                      <Search className="w-6 h-6 text-[#7A7F8C]" />
                     </div>
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">
+                    <h3 className="text-base font-semibold text-[#14213A] mb-1">
                       No calendars found
                     </h3>
-                    <p className="text-slate-500">
+                    <p className="text-sm text-[#7A7F8C]">
                       Try adjusting your search query or create a new calendar.
                     </p>
                   </td>
@@ -181,32 +182,32 @@ export default function AdminComplianceCalendarPage() {
                 filteredPosts.map((post) => (
                   <tr
                     key={post.id || post.slug}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    className="hover:bg-[#FAFAF8] transition-colors"
                   >
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
-                        <span className="font-medium text-slate-900 dark:text-white mb-1 line-clamp-1">
+                        <span className="font-semibold text-[#14213A] text-sm mb-1 line-clamp-1">
                           {post.title}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-[#7A7F8C]">
                           {post.category}
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       {post.published ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                          <CheckCircle className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
+                          <CheckCircle className="w-3 h-3" />
                           Published
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                          <Clock className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
+                          <Clock className="w-3 h-3" />
                           Draft
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-6 text-sm text-slate-600 dark:text-slate-400">
+                    <td className="py-4 px-6 text-sm text-[#7A7F8C]">
                       {new Date(post.date).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
@@ -214,12 +215,12 @@ export default function AdminComplianceCalendarPage() {
                       })}
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         {post.published && (
                           <Link
                             href={`/resources/compliance-calendar/${post.slug}`}
                             target="_blank"
-                            className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                            className="p-2 text-[#7A7F8C] hover:text-[#B5723B] hover:bg-[#B5723B]/10 rounded-lg transition-colors"
                             title="View Public Page"
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -227,7 +228,7 @@ export default function AdminComplianceCalendarPage() {
                         )}
                         <Link
                           href={`/admin/compliance/edit?id=${post.id}`}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-[#7A7F8C] hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
@@ -235,7 +236,7 @@ export default function AdminComplianceCalendarPage() {
                         <button
                           onClick={() => post.id && handleDelete(post.id, post.title)}
                           disabled={!post.id || deletingId === post.id}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-[#7A7F8C] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
