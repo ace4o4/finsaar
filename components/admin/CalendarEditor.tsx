@@ -29,7 +29,7 @@ import {
 import { uploadBlogImage } from "@/lib/blog-service"; // Reuse blog image bucket
 import { isSupabaseConfigured } from "@/lib/supabase";
 import Image from "next/image";
-
+import ImageCropperModal from "./ImageCropperModal";
 interface CalendarEditorProps {
   initialPost?: Partial<CalendarPost> & { id?: string };
   isEdit?: boolean;
@@ -58,6 +58,7 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
   const [viewMode, setViewMode] = useState<"write" | "preview" | "split">("split");
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [cropImgSrc, setCropImgSrc] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -88,8 +89,21 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
       return;
     }
 
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setCropImgSrc(reader.result?.toString() || null);
+    });
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    setCropImgSrc(null);
     setUploadingImage(true);
     setFeedback(null);
+
+    // Convert Blob back to File
+    const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: "image/jpeg" });
 
     const { url, error } = await uploadBlogImage(file);
 
@@ -250,14 +264,14 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
           >
             Save Draft
           </button>
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2"
           >
             {saving ? "Saving..." : "Publish"}
           </button>
@@ -303,16 +317,68 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
 
           {/* Preview Pane */}
           {(viewMode === "preview" || viewMode === "split") && (
-            <div className={`overflow-y-auto bg-slate-50 dark:bg-slate-900 ${viewMode === "split" ? "w-1/2" : "w-full"}`}>
+            <div className={`overflow-y-auto bg-[#FBF9F6] ${viewMode === "split" ? "w-1/2" : "w-full"}`}>
               <div className="max-w-3xl mx-auto p-8">
                 {title && (
-                  <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-6">
+                  <h1 className="text-4xl font-bold text-navy mb-6 font-heading">
                     {title}
                   </h1>
                 )}
-                <div className="prose prose-slate dark:prose-invert prose-brand max-w-none prose-headings:font-semibold prose-a:text-brand-600 hover:prose-a:text-brand-700 prose-table:w-full prose-th:bg-slate-100 dark:prose-th:bg-slate-800 prose-th:p-3 prose-td:p-3 prose-td:border-t prose-td:border-slate-200 dark:prose-td:border-slate-700">
+                <div className="prose prose-lg max-w-none 
+                  prose-p:font-body prose-p:text-navy/80 prose-p:leading-relaxed prose-p:mb-6
+                  prose-ul:list-disc prose-ul:pl-5
+                  prose-li:text-navy/80 prose-li:mb-2
+                  prose-strong:text-navy prose-strong:font-bold
+                  prose-hr:border-sand/60 prose-hr:my-16"
+                >
                   {content ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]} 
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        h2: ({node, ...props}) => (
+                          <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy mt-12 mb-6 tracking-tight" {...props} />
+                        ),
+                        h3: ({node, ...props}) => (
+                          <h3 className="font-heading text-xl md:text-2xl font-semibold text-navy mt-10 mb-4 flex items-center gap-3" {...props} />
+                        ),
+                        table: ({node, ...props}) => (
+                          <div className="w-full my-8 bg-white rounded-[16px] border border-sand/60 shadow-[0_4px_20px_rgba(20,33,58,0.04)] overflow-hidden">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse min-w-[700px]" {...props} />
+                            </div>
+                          </div>
+                        ),
+                        thead: ({node, ...props}) => (
+                          <thead className="bg-navy text-white" {...props} />
+                        ),
+                        th: ({node, ...props}) => (
+                          <th className="px-6 py-4 font-heading font-semibold text-xs md:text-sm uppercase tracking-widest text-white/90 border-b border-white/10" {...props} />
+                        ),
+                        tbody: ({node, ...props}) => (
+                          <tbody className="divide-y divide-sand/60" {...props} />
+                        ),
+                        tr: ({node, ...props}) => (
+                          <tr className="hover:bg-[#FBF9F6] transition-colors duration-300 group" {...props} />
+                        ),
+                        td: ({node, ...props}) => (
+                          <td className="px-6 py-4 text-navy/80 font-body align-top text-sm group-hover:text-navy transition-colors 
+                            [&:first-child>strong]:bg-copper/10 [&:first-child>strong]:text-copper [&:first-child>strong]:px-3 [&:first-child>strong]:py-1 [&:first-child>strong]:rounded-full [&:first-child>strong]:text-[10px] [&:first-child>strong]:font-bold [&:first-child>strong]:tracking-wider [&:first-child>strong]:uppercase [&:first-child]:whitespace-nowrap
+                            [&:nth-child(2)]:font-semibold [&:nth-child(2)]:text-navy [&:nth-child(2)]:whitespace-nowrap" 
+                            {...props} 
+                          />
+                        ),
+                        blockquote: ({node, ...props}) => (
+                          <div className="relative overflow-hidden rounded-[16px] bg-gradient-to-br from-copper/5 to-transparent border border-copper/20 p-6 my-8 shadow-sm">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-copper" />
+                            <blockquote className="relative z-10 text-navy/90 font-medium text-lg leading-relaxed m-0 p-0" {...props} />
+                          </div>
+                        ),
+                        a: ({node, ...props}) => (
+                          <a className="text-copper font-semibold hover:text-copper-dark underline decoration-2 underline-offset-4 decoration-copper/30 hover:decoration-copper transition-all" {...props} />
+                        )
+                      }}
+                    >
                       {content}
                     </ReactMarkdown>
                   ) : (
@@ -480,6 +546,16 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
           {isRightSidebarOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
+
+      {/* Image Cropper Modal */}
+      {cropImgSrc && (
+        <ImageCropperModal
+          imgSrc={cropImgSrc}
+          aspect={16 / 9}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setCropImgSrc(null)}
+        />
+      )}
     </div>
   );
 }
