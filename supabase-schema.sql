@@ -266,8 +266,10 @@ create table if not exists public.compliance_calendars (
   content text not null,
   category text not null default 'Monthly Calendar',
   author text not null default 'Finsaar Team',
+  author_role text not null default 'Compliance Team',
   date date not null default current_date,
   published boolean not null default true,
+  tags text[] default '{}',
   image text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null

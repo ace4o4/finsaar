@@ -5,12 +5,13 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Calendar, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
 import { getCalendarPostBySlug, getCalendarPosts } from "@/lib/calendar-service";
-import { ComplianceCalendarDetailClient } from "./ClientPage";
+import { ComplianceCalendarDetailClient, ShareButton } from "./ClientPage";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -64,72 +65,103 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
   return (
     <>
       <ComplianceCalendarDetailClient />
-      <main className="bg-[#FBF9F6] min-h-screen pb-24">
-        {/* Breadcrumb & Navigation */}
-        <div className="bg-navy pt-32 pb-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav className="flex items-center text-sm font-medium text-white/60 mb-6">
-              <Link href="/resources/compliance-calendar" className="hover:text-copper transition-colors">
-                Compliance Calendars
-              </Link>
-              <ChevronRight className="w-4 h-4 mx-2" />
-              <span className="text-white truncate">{post.title}</span>
-            </nav>
-            <Link
-              href="/resources/compliance-calendar"
-              className="inline-flex items-center gap-2 text-white/80 hover:text-copper transition-colors font-medium mb-8"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Calendars
+      <main className="bg-[#FBF9F6] min-h-screen">
+        <section className="bg-white py-12 md:py-20 border-b border-sand/40 pt-32">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Link href="/resources/compliance-calendar" className="inline-flex items-center gap-2 font-body text-sm text-navy/50 hover:text-copper transition-colors mb-8">
+              <ArrowLeft size={16} /> Back to Calendars
             </Link>
             
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="px-3 py-1 bg-copper/10 text-copper rounded-full text-xs font-heading font-semibold uppercase tracking-wider">
+                {post.category || "Deadlines"}
+              </span>
+            </div>
+
+            <h1 className="font-heading font-extrabold text-3xl md:text-5xl text-navy leading-tight mb-6">
               {post.title}
             </h1>
             
-            <div className="flex flex-wrap items-center gap-6 text-white/70 font-medium">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-copper" />
-                <span>{formattedDate}</span>
+            <p className="font-body text-lg text-navy/60 mb-8 leading-relaxed max-w-3xl">
+              {post.excerpt}
+            </p>
+
+            <div className="flex items-center justify-between py-6 border-y border-sand/40">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-copper/20 flex items-center justify-center">
+                  <span className="font-heading font-bold text-navy">
+                    {post.author ? post.author.split(" ").map(n => n[0]).join("") : "F"}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-heading font-semibold text-navy">{post.author || "Finsaar"}</p>
+                  <p className="font-body text-xs text-navy/50">Compliance Team</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-copper" />
-                <span>{post.category}</span>
+              <div className="text-right">
+                <p className="flex items-center gap-1.5 font-body text-xs text-navy/50 justify-end mb-2">
+                  <Calendar size={14} /> Date
+                </p>
+                <p className="font-body text-sm font-medium text-navy">{formattedDate}</p>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-          {post.image && (
-            <div className="relative w-full aspect-video md:aspect-[2/1] lg:aspect-[2.5/1] rounded-[24px] overflow-hidden mb-12 shadow-xl border border-white/10 z-10">
-              <Image
-                src={post.image}
-                alt={post.title}
-                fill
-                className="object-cover"
-                priority
-              />
+        {/* Featured Image */}
+        {post.image && (
+          <section className="py-8 bg-white">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="relative w-full h-[300px] md:h-[400px] lg:h-[480px] rounded-3xl overflow-hidden shadow-2xl border border-sand/30">
+                <Image src={post.image} alt={post.title} fill className="object-cover" />
+              </div>
             </div>
-          )}
+          </section>
+        )}
 
-          <div className="max-w-5xl mx-auto bg-white rounded-[40px] p-8 md:p-14 lg:p-20 shadow-[0_20px_60px_-15px_rgba(20,33,58,0.05)] border border-black/5 relative z-0 mt-8 mb-20">
-            <div className="prose prose-lg max-w-none 
+        {/* Post Content */}
+        <section className="py-12 md:py-20">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-12">
+            
+            {/* Social Share sidebar - sticky */}
+            <div className="md:w-16 shrink-0 order-2 md:order-1">
+              <div className="sticky top-24 flex md:flex-col gap-4 items-center">
+                <p className="font-heading font-semibold text-xs text-navy/40 uppercase tracking-widest md:[writing-mode:vertical-rl] md:mb-4">Share</p>
+                <ShareButton title={post.title} />
+              </div>
+            </div>
+
+            {/* Markdown Body */}
+            <article className="order-1 md:order-2 flex-1 min-w-0 prose prose-lg max-w-none 
               prose-p:font-body prose-p:text-navy/80 prose-p:leading-relaxed prose-p:mb-6
               prose-ul:list-disc prose-ul:pl-5
               prose-li:text-navy/80 prose-li:mb-2
               prose-strong:text-navy prose-strong:font-bold
-              prose-hr:border-sand/60 prose-hr:my-16"
-            >
+              prose-hr:border-sand/60 prose-hr:my-16">
               <ReactMarkdown 
-                remarkPlugins={[remarkGfm]} 
+                remarkPlugins={[remarkGfm, remarkBreaks]} 
                 rehypePlugins={[rehypeRaw]}
                 components={{
                   h2: ({node, ...props}) => (
-                    <h2 className="font-heading text-3xl md:text-5xl font-bold text-navy mt-16 mb-8 tracking-tight" {...props} />
+                    <h2 className="font-heading font-bold text-2xl md:text-3xl text-navy mt-12 mb-6 tracking-tight" {...props} />
                   ),
                   h3: ({node, ...props}) => (
-                    <h3 className="font-heading text-2xl md:text-3xl font-semibold text-navy mt-14 mb-6 flex items-center gap-3" {...props} />
+                    <h3 className="font-heading font-semibold text-xl md:text-2xl text-navy mt-10 mb-4 flex items-center gap-3" {...props} />
+                  ),
+                  p: ({node, ...props}) => (
+                    <p className="font-body text-base md:text-lg text-navy/80 leading-relaxed mb-6" {...props} />
+                  ),
+                  ul: ({node, ...props}) => (
+                    <ul className="list-disc list-outside ml-6 space-y-2 font-body text-base md:text-lg text-navy/80 mb-6" {...props} />
+                  ),
+                  ol: ({node, ...props}) => (
+                    <ol className="list-decimal list-outside ml-6 space-y-2 font-body text-base md:text-lg text-navy/80 mb-6" {...props} />
+                  ),
+                  li: ({node, ...props}) => (
+                    <li className="leading-relaxed pl-1" {...props} />
+                  ),
+                  hr: ({node, ...props}) => (
+                    <hr className="my-12 border-sand/40" {...props} />
                   ),
                   table: ({node, ...props}) => (
                     <div className="w-full my-12 bg-white rounded-[24px] border border-sand/60 shadow-[0_8px_30px_rgba(20,33,58,0.04)] overflow-hidden">
@@ -170,9 +202,9 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
               >
                 {post.content}
               </ReactMarkdown>
-            </div>
+            </article>
           </div>
-        </div>
+        </section>
       </main>
       <Footer />
     </>

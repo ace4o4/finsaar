@@ -6,6 +6,8 @@ export interface CalendarPost {
   content: string;
   category: string;
   author: string;
+  authorRole?: string;
+  tags?: string[];
   date: string;
   published: boolean;
   image?: string;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import {
   ArrowLeft,
@@ -46,6 +47,8 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
   const [content, setContent] = useState(initialPost?.content || "");
   const [category, setCategory] = useState(initialPost?.category || "Monthly Calendar");
   const [author, setAuthor] = useState(initialPost?.author || "Finsaar Team");
+  const [authorRole, setAuthorRole] = useState(initialPost?.authorRole || "Compliance Team");
+  const [tags, setTags] = useState<string>(initialPost?.tags?.join(", ") || "");
   const [date, setDate] = useState(
     initialPost?.date || new Date().toISOString().split("T")[0]
   );
@@ -175,6 +178,8 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
       content,
       category,
       author,
+      authorRole,
+      tags: tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0),
       date,
       published: isPublished,
       image: imageUrl || undefined,
@@ -333,7 +338,7 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
                 >
                   {content ? (
                     <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]} 
+                      remarkPlugins={[remarkGfm, remarkBreaks]} 
                       rehypePlugins={[rehypeRaw]}
                       components={{
                         h2: ({node, ...props}) => (
@@ -341,6 +346,21 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
                         ),
                         h3: ({node, ...props}) => (
                           <h3 className="font-heading text-xl md:text-2xl font-semibold text-navy mt-10 mb-4 flex items-center gap-3" {...props} />
+                        ),
+                        p: ({node, ...props}) => (
+                          <p className="font-body text-base text-navy/80 leading-relaxed mb-6" {...props} />
+                        ),
+                        ul: ({node, ...props}) => (
+                          <ul className="list-disc list-outside ml-6 space-y-2 font-body text-base text-navy/80 mb-6" {...props} />
+                        ),
+                        ol: ({node, ...props}) => (
+                          <ol className="list-decimal list-outside ml-6 space-y-2 font-body text-base text-navy/80 mb-6" {...props} />
+                        ),
+                        li: ({node, ...props}) => (
+                          <li className="leading-relaxed pl-1" {...props} />
+                        ),
+                        hr: ({node, ...props}) => (
+                          <hr className="my-8 border-sand/40" {...props} />
                         ),
                         table: ({node, ...props}) => (
                           <div className="w-full my-8 bg-white rounded-[16px] border border-sand/60 shadow-[0_4px_20px_rgba(20,33,58,0.04)] overflow-hidden">
@@ -484,12 +504,39 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Category
+                  Author Name
                 </label>
                 <input
                   type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="e.g. Rahul Sharma"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Author Designation
+                </label>
+                <input
+                  type="text"
+                  value={authorRole}
+                  onChange={(e) => setAuthorRole(e.target.value)}
+                  placeholder="e.g. Compliance Expert"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="e.g. Tax, GST, Income Tax"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>

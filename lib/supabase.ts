@@ -27,8 +27,10 @@ export interface DatabaseCalendar {
   content: string;
   category: string;
   author: string;
+  author_role: string;
   date: string;
   published: boolean;
+  tags: string[];
   image: string | null;
   created_at?: string;
   updated_at?: string;

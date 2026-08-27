@@ -11,6 +11,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Calendar, Share2, Globe, MessageCircle, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import Image from "next/image";
 
@@ -150,7 +151,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
             {/* Markdown Body */}
             <article className="order-1 md:order-2 flex-1 min-w-0">
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkBreaks]}
                 rehypePlugins={[rehypeRaw]}
                 components={{
                   h1: ({ ...props }) => (
