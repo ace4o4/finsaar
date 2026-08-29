@@ -5,17 +5,29 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import {
   ArrowLeft,
   UploadCloud,
   Eye,
   Edit3,
+  Sparkles,
   CheckCircle,
   AlertCircle,
   X,
+  Plus,
+  Star,
+  Globe,
   FileText,
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  List,
+  Quote,
+  Code,
+  Link2,
+  Table,
   PanelRightClose,
   PanelRightOpen,
   ChevronLeft,
@@ -24,13 +36,13 @@ import {
 } from "lucide-react";
 import { CalendarPost } from "@/lib/calendar-data";
 import {
-  createCalendarPost,
-  updateCalendarPost,
+  createCalendarPost as createPost,
+  updateCalendarPost as updatePost,
 } from "@/lib/calendar-service";
-import { uploadBlogImage } from "@/lib/blog-service"; // Reuse blog image bucket
+import { uploadBlogImage } from "@/lib/blog-service";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import Image from "next/image";
-import ImageCropperModal from "./ImageCropperModal";
+
 interface CalendarEditorProps {
   initialPost?: Partial<CalendarPost> & { id?: string };
   isEdit?: boolean;
@@ -45,23 +57,29 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(isEdit);
   const [excerpt, setExcerpt] = useState(initialPost?.excerpt || "");
   const [content, setContent] = useState(initialPost?.content || "");
-  const [category, setCategory] = useState(initialPost?.category || "Monthly Calendar");
+
   const [author, setAuthor] = useState(initialPost?.author || "Finsaar Team");
-  const [authorRole, setAuthorRole] = useState(initialPost?.authorRole || "Compliance Team");
-  const [tags, setTags] = useState<string>(initialPost?.tags?.join(", ") || "");
+  const [authorRole, setAuthorRole] = useState(
+    initialPost?.authorRole || "Compliance Team"
+  );
   const [date, setDate] = useState(
     initialPost?.date || new Date().toISOString().split("T")[0]
   );
+  
+  
   const [published, setPublished] = useState(
     initialPost?.published !== undefined ? initialPost.published : true
   );
+  const [tags, setTags] = useState<string[]>(
+    initialPost?.tags || []
+  );
+  const [newTagInput, setNewTagInput] = useState("");
   const [imageUrl, setImageUrl] = useState(initialPost?.image || "");
 
   // UI State
   const [viewMode, setViewMode] = useState<"write" | "preview" | "split">("split");
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [cropImgSrc, setCropImgSrc] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -80,383 +98,290 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
     }
   }, [title, slugManuallyEdited, isEdit]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  
+
+  // Tag Handlers
+  const handleAddTag = (e: React.KeyboardEvent | React.MouseEvent) => {
+    if ("key" in e && e.key !== "Enter" && e.key !== ",") return;
+    e.preventDefault();
+    const tag = newTagInput.trim().replace(/^,+|,+$/g, "");
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      setNewTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
+  // Image Upload Handler
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!isSupabaseConfigured) {
+      // Local preview mode
+      const localUrl = URL.createObjectURL(file);
+      setImageUrl(localUrl);
       setFeedback({
-        type: "error",
-        message: "Supabase is not configured. Cannot upload images.",
+        type: "success",
+        message: "Image preview loaded (Supabase storage will store this when connected).",
       });
       return;
     }
 
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      setCropImgSrc(reader.result?.toString() || null);
-    });
-    reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
-  };
-
-  const handleCropComplete = async (blob: Blob) => {
-    setCropImgSrc(null);
     setUploadingImage(true);
     setFeedback(null);
-
-    // Convert Blob back to File
-    const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: "image/jpeg" });
-
-    const { url, error } = await uploadBlogImage(file);
-
-    if (error || !url) {
-      setFeedback({ type: "error", message: error || "Failed to upload image" });
+    try {
+      const res = await uploadBlogImage(file);
+      if (res.success && res.url) {
+        setImageUrl(res.url);
+        setFeedback({
+          type: "success",
+          message: "Cover photo uploaded to Supabase Storage successfully!",
+        });
+      } else {
+        setFeedback({
+          type: "error",
+          message: res.error || "Failed to upload image.",
+        });
+      }
+    } catch (err: unknown) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Upload error",
+      });
+    } finally {
       setUploadingImage(false);
-      return;
     }
-
-    setImageUrl(url);
-    setUploadingImage(false);
   };
 
-  const insertMarkdown = (syntax: string) => {
-    const textarea = document.getElementById("markdown-editor") as HTMLTextAreaElement;
+  // Toolbar Insert Helper
+  const insertMarkdown = (syntaxStart: string, syntaxEnd = "") => {
+    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const before = text.substring(0, start);
-    const after = text.substring(end);
-    const selected = text.substring(start, end);
+    const selected = content.substring(start, end);
+    const replacement = `${syntaxStart}${selected || "text"}${syntaxEnd}`;
 
-    let replacement = "";
-    if (syntax === "bold") replacement = `**${selected || "bold text"}**`;
-    if (syntax === "italic") replacement = `*${selected || "italic text"}*`;
-    if (syntax === "h2") replacement = `\n## ${selected || "Heading 2"}\n`;
-    if (syntax === "h3") replacement = `\n### ${selected || "Heading 3"}\n`;
-    if (syntax === "link") replacement = `[${selected || "link text"}](url)`;
-    if (syntax === "image") replacement = `![${selected || "alt text"}](image_url)`;
-    if (syntax === "table") {
-      replacement = `\n| Due Date | Task / Compliance | Authority | Status |\n|---|---|---|---|\n| Aug 07, 2026 | TDS Liability | IT Dept | UPCOMING |\n`;
-    }
+    const newContent =
+      content.substring(0, start) + replacement + content.substring(end);
+    setContent(newContent);
 
-    setContent(before + replacement + after);
-    
     setTimeout(() => {
       textarea.focus();
-      if (!selected) {
-        let cursorOffset = replacement.length;
-        if (syntax === "bold") cursorOffset -= 2;
-        if (syntax === "italic") cursorOffset -= 1;
-        if (syntax === "link") cursorOffset -= 4; // inside (url)
-        textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
-      }
-    }, 0);
+      textarea.setSelectionRange(
+        start + syntaxStart.length,
+        start + syntaxStart.length + (selected.length || 4)
+      );
+    }, 50);
   };
 
-  const handleSave = async (isPublished: boolean) => {
+  const insertTable = () => {
+    const tableTemplate = `\n| Metric / Header 1 | Description 2 | Status 3 |\n| :--- | :--- | :--- |\n| Data A | Value 1 | Active |\n| Data B | Value 2 | Completed |\n\n`;
+    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newContent = content.substring(0, start) + tableTemplate + content.substring(end);
+    setContent(newContent);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + tableTemplate.length, start + tableTemplate.length);
+    }, 50);
+  };
+
+  // Save / Publish Submit Handler
+  const handleSubmit = async (publishStatus = published) => {
+    setSaving(true);
     setFeedback(null);
 
-    if (!title || !slug || !content) {
+    if (!title.trim() || !slug.trim() || !content.trim()) {
       setFeedback({
         type: "error",
-        message: "Title, slug, and content are required.",
+        message: "Title, URL slug, and content are required.",
       });
-      setIsRightSidebarOpen(true);
+      setSaving(false);
       return;
     }
 
-    setSaving(true);
-    setPublished(isPublished);
-
-    const postData: CalendarPost = {
-      slug,
-      title,
-      excerpt,
-      content,
-      category,
-      author,
-      authorRole,
-      tags: tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0),
+    const postData = {
+      title: title.trim(),
+      slug: slug.trim(),
+      excerpt: excerpt.trim() || title.trim(),
+      content: content.trim(),
+      category: "Compliance Calendar",
+      author: author.trim(),
+      authorRole: authorRole.trim(),
       date,
-      published: isPublished,
-      image: imageUrl || undefined,
+      
+      
+      published: publishStatus,
+      tags: tags.length > 0 ? tags : ["Compliance"],
+      image: imageUrl.trim() || undefined,
     };
 
-    let result;
-
-    if (isEdit && initialPost?.id) {
-      result = await updateCalendarPost(initialPost.id, postData, isPublished);
-    } else {
-      result = await createCalendarPost(postData, isPublished);
-    }
-
-    setSaving(false);
-
-    if (result.success) {
-      setFeedback({
-        type: "success",
-        message: `Calendar ${isPublished ? "published" : "saved as draft"} successfully!`,
-      });
-      setTimeout(() => {
-        router.push("/admin/compliance");
-      }, 1500);
-    } else {
+    try {
+      if (isEdit && initialPost?.id) {
+        const res = await updatePost(initialPost.id, postData);
+        if (res.success) {
+          setFeedback({
+            type: "success",
+            message: "Calendar post updated successfully!",
+          });
+          setTimeout(() => router.push("/admin/compliance"), 1000);
+        } else {
+          setFeedback({
+            type: "error",
+            message: res.error || "Failed to update blog post.",
+          });
+        }
+      } else {
+        const res = await createPost(postData);
+        if (res.success) {
+          setFeedback({
+            type: "success",
+            message: "New blog post published successfully!",
+          });
+          setTimeout(() => router.push("/admin/compliance"), 1000);
+        } else {
+          // If Supabase not configured, acknowledge in local preview
+          if (!isSupabaseConfigured) {
+            setFeedback({
+              type: "success",
+              message: "Preview validated! Connect Supabase to save permanently to your database.",
+            });
+          } else {
+            setFeedback({
+              type: "error",
+              message: res.error || "Failed to save post.",
+            });
+          }
+        }
+      }
+    } catch (err: unknown) {
       setFeedback({
         type: "error",
-        message: result.error || "Failed to save calendar post.",
+        message: err instanceof Error ? err.message : "Error saving post",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-slate-900">
+    <div className="space-y-8 w-full max-w-full pb-20">
       {/* Top Header */}
-      <header className="flex-none flex items-center justify-between px-4 sm:px-6 py-3 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 z-10">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <Link
-            href="/admin/compliance"
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
+            href="/admin/blog"
+            className="p-2 rounded-xl bg-white border border-[#E7E4DC] text-[#7A7F8C] hover:text-[#14213A] transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {isEdit ? "Edit Calendar" : "New Calendar"}
+            <h1 className="font-heading font-extrabold text-2xl text-[#14213A]">
+              {isEdit ? "Edit Article" : "Create New Article"}
             </h1>
-            <p className="text-sm text-slate-500">
-              {published ? "Published" : "Draft"} • {saving ? "Saving..." : "All changes saved"}
+            <p className="text-xs text-[#7A7F8C] mt-0.5">
+              Authoritative financial intelligence for scaling founders
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode("write")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                viewMode === "write"
-                  ? "bg-white dark:bg-slate-700 text-brand-900 dark:text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Write
-            </button>
-            <button
-              onClick={() => setViewMode("preview")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                viewMode === "preview"
-                  ? "bg-white dark:bg-slate-700 text-brand-900 dark:text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Preview
-            </button>
-            <button
-              onClick={() => setViewMode("split")}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                viewMode === "split"
-                  ? "bg-white dark:bg-slate-700 text-brand-900 dark:text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Split
-            </button>
-          </div>
+        <div className="flex items-center gap-3">
+          {/* Toggle Right Sidebar Button */}
+          <button
+            type="button"
+            onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+            className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all ${
+              isRightSidebarOpen
+                ? "bg-white border-[#E7E4DC] text-[#14213A] hover:bg-[#F5F3EE]"
+                : "bg-[#14213A] border-[#14213A] text-white shadow-sm"
+            }`}
+            title={isRightSidebarOpen ? "Hide Settings Panel" : "Show Settings Panel"}
+          >
+            {isRightSidebarOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
+            <span>{isRightSidebarOpen ? "Hide Settings" : "Show Settings"}</span>
+          </button>
 
           <button
-            onClick={() => handleSave(false)}
+            type="button"
+            onClick={() => handleSubmit(false)}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-4 py-2.5 rounded-xl border border-[#E7E4DC] bg-white text-xs font-semibold text-[#14213A] hover:bg-[#F5F3EE] transition-all disabled:opacity-50"
           >
             Save Draft
           </button>
           <button
-            onClick={() => handleSave(true)}
+            type="button"
+            onClick={() => handleSubmit(true)}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-[#14213A] hover:bg-[#1e3256] text-white text-xs font-heading font-semibold shadow-md shadow-[#14213A]/10 transition-all flex items-center gap-2 disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Publish"}
-          </button>
-          <button
-            onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-            className="p-2 ml-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors lg:hidden"
-          >
-            <SlidersHorizontal className="w-5 h-5" />
+            <Sparkles size={14} className="text-[#B5723B]" />
+            {saving ? "Publishing..." : isEdit ? "Update Article" : "Publish Article"}
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Editor & Preview Pane */}
-        <div className="flex-1 flex overflow-hidden relative">
-          
-          {/* Write Pane */}
-          {(viewMode === "write" || viewMode === "split") && (
-            <div className={`flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 ${viewMode === "split" ? "w-1/2" : "w-full"}`}>
-              {/* Toolbar */}
-              <div className="flex items-center gap-1 p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-x-auto">
-                <button onClick={() => insertMarkdown("h2")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded" title="Heading 2">H2</button>
-                <button onClick={() => insertMarkdown("h3")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded" title="Heading 3">H3</button>
-                <div className="w-px h-4 bg-slate-300 mx-1" />
-                <button onClick={() => insertMarkdown("bold")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded font-bold" title="Bold">B</button>
-                <button onClick={() => insertMarkdown("italic")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded italic" title="Italic">I</button>
-                <div className="w-px h-4 bg-slate-300 mx-1" />
-                <button onClick={() => insertMarkdown("link")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded" title="Link">Link</button>
-                <button onClick={() => insertMarkdown("image")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded" title="Image">Img</button>
-                <button onClick={() => insertMarkdown("table")} className="p-1.5 text-slate-600 hover:bg-slate-200 rounded font-bold text-brand-600" title="Insert Table">Table</button>
-              </div>
+      {/* Feedback Banner */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-sm ${feedback.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-red-50 border-red-200 text-red-800"
+            }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === "success" ? (
+              <CheckCircle size={16} className="shrink-0" />
+            ) : (
+              <AlertCircle size={16} className="shrink-0" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-xs font-semibold opacity-70 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-              <textarea
-                id="markdown-editor"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your calendar content here using Markdown... You can insert a Table from the toolbar."
-                className="flex-1 w-full p-6 resize-none outline-none bg-transparent text-slate-900 dark:text-slate-100 font-mono text-sm leading-relaxed"
+      {/* Main Form Fields (Flex Layout with responsive expand/collapse) */}
+      <div className="flex flex-col lg:flex-row gap-8 relative items-start">
+        {/* Left / Middle Main Writing Section (Expands smoothly to 100% when right panel is minimized) */}
+        <div className={`w-full ${isRightSidebarOpen ? "lg:flex-1" : "lg:w-full"} space-y-6 transition-all duration-500 ease-in-out min-w-0`}>
+          {/* Title */}
+          <div className="bg-white p-6 rounded-3xl border border-[#E7E4DC] shadow-sm space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                Article Title *
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Navigating Indian Compliance for Seed-Stage Startups"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl font-heading font-bold text-lg text-[#14213A] placeholder-[#7A7F8C]/60 focus:outline-none focus:border-[#B5723B]"
               />
             </div>
-          )}
 
-          {/* Preview Pane */}
-          {(viewMode === "preview" || viewMode === "split") && (
-            <div className={`overflow-y-auto bg-[#FBF9F6] ${viewMode === "split" ? "w-1/2" : "w-full"}`}>
-              <div className="max-w-3xl mx-auto p-8">
-                {title && (
-                  <h1 className="text-4xl font-bold text-navy mb-6 font-heading">
-                    {title}
-                  </h1>
-                )}
-                <div className="prose prose-lg max-w-none 
-                  prose-p:font-body prose-p:text-navy/80 prose-p:leading-relaxed prose-p:mb-6
-                  prose-ul:list-disc prose-ul:pl-5
-                  prose-li:text-navy/80 prose-li:mb-2
-                  prose-strong:text-navy prose-strong:font-bold
-                  prose-hr:border-sand/60 prose-hr:my-16"
-                >
-                  {content ? (
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm, remarkBreaks]} 
-                      rehypePlugins={[rehypeRaw]}
-                      components={{
-                        h2: ({node, ...props}) => (
-                          <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy mt-12 mb-6 tracking-tight" {...props} />
-                        ),
-                        h3: ({node, ...props}) => (
-                          <h3 className="font-heading text-xl md:text-2xl font-semibold text-navy mt-10 mb-4 flex items-center gap-3" {...props} />
-                        ),
-                        p: ({node, ...props}) => (
-                          <p className="font-body text-base text-navy/80 leading-relaxed mb-6" {...props} />
-                        ),
-                        ul: ({node, ...props}) => (
-                          <ul className="list-disc list-outside ml-6 space-y-2 font-body text-base text-navy/80 mb-6" {...props} />
-                        ),
-                        ol: ({node, ...props}) => (
-                          <ol className="list-decimal list-outside ml-6 space-y-2 font-body text-base text-navy/80 mb-6" {...props} />
-                        ),
-                        li: ({node, ...props}) => (
-                          <li className="leading-relaxed pl-1" {...props} />
-                        ),
-                        hr: ({node, ...props}) => (
-                          <hr className="my-8 border-sand/40" {...props} />
-                        ),
-                        table: ({node, ...props}) => (
-                          <div className="w-full my-8 bg-white rounded-[16px] border border-sand/60 shadow-[0_4px_20px_rgba(20,33,58,0.04)] overflow-hidden">
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-left border-collapse min-w-[700px]" {...props} />
-                            </div>
-                          </div>
-                        ),
-                        thead: ({node, ...props}) => (
-                          <thead className="bg-navy text-white" {...props} />
-                        ),
-                        th: ({node, ...props}) => (
-                          <th className="px-6 py-4 font-heading font-semibold text-xs md:text-sm uppercase tracking-widest text-white/90 border-b border-white/10" {...props} />
-                        ),
-                        tbody: ({node, ...props}) => (
-                          <tbody className="divide-y divide-sand/60" {...props} />
-                        ),
-                        tr: ({node, ...props}) => (
-                          <tr className="hover:bg-[#FBF9F6] transition-colors duration-300 group" {...props} />
-                        ),
-                        td: ({node, ...props}) => (
-                          <td className="px-6 py-4 text-navy/80 font-body align-top text-sm group-hover:text-navy transition-colors 
-                            [&:first-child>strong]:bg-copper/10 [&:first-child>strong]:text-copper [&:first-child>strong]:px-3 [&:first-child>strong]:py-1 [&:first-child>strong]:rounded-full [&:first-child>strong]:text-[10px] [&:first-child>strong]:font-bold [&:first-child>strong]:tracking-wider [&:first-child>strong]:uppercase [&:first-child]:whitespace-nowrap
-                            [&:nth-child(2)]:font-semibold [&:nth-child(2)]:text-navy [&:nth-child(2)]:whitespace-nowrap" 
-                            {...props} 
-                          />
-                        ),
-                        blockquote: ({node, ...props}) => (
-                          <div className="relative overflow-hidden rounded-[16px] bg-gradient-to-br from-copper/5 to-transparent border border-copper/20 p-6 my-8 shadow-sm">
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-copper" />
-                            <blockquote className="relative z-10 text-navy/90 font-medium text-lg leading-relaxed m-0 p-0" {...props} />
-                          </div>
-                        ),
-                        a: ({node, ...props}) => (
-                          <a className="text-copper font-semibold hover:text-copper-dark underline decoration-2 underline-offset-4 decoration-copper/30 hover:decoration-copper transition-all" {...props} />
-                        )
-                      }}
-                    >
-                      {content}
-                    </ReactMarkdown>
-                  ) : (
-                    <div className="text-slate-400 italic">Preview will appear here...</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Settings Sidebar */}
-        <div
-          className={`
-            absolute inset-y-0 right-0 z-20 w-80 bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out lg:relative lg:transform-none
-            ${isRightSidebarOpen ? "translate-x-0" : "translate-x-full lg:hidden"}
-          `}
-        >
-          <div className="h-full overflow-y-auto p-5 space-y-6">
-            <div className="flex items-center justify-between lg:hidden mb-2">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Settings</h3>
-              <button onClick={() => setIsRightSidebarOpen(false)} className="p-1 text-slate-500">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {feedback && (
-              <div className={`p-3 rounded-lg text-sm flex items-start gap-2 ${
-                feedback.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-              }`}>
-                {feedback.type === "success" ? <CheckCircle className="w-4 h-4 mt-0.5" /> : <AlertCircle className="w-4 h-4 mt-0.5" />}
-                <p>{feedback.message}</p>
-              </div>
-            )}
-
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
-                Post Details
-              </h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="e.g. August 2026 Deadlines"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Slug (URL)
-                </label>
+            {/* URL Slug */}
+            <div>
+              <label className="block text-xs font-semibold text-[#7A7F8C] uppercase tracking-wider mb-1">
+                URL Slug
+              </label>
+              <div className="flex items-center gap-2 bg-[#FAFAF8] border border-[#E7E4DC] px-3.5 py-2 rounded-xl text-xs">
+                <span className="text-[#7A7F8C]">/blog/</span>
                 <input
                   type="text"
                   value={slug}
@@ -464,145 +389,508 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
                     setSlug(e.target.value);
                     setSlugManuallyEdited(true);
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Excerpt
-                </label>
-                <textarea
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                  placeholder="Brief summary..."
+                  className="bg-transparent font-mono text-[#14213A] flex-1 focus:outline-none"
+                  placeholder="post-url-slug"
                 />
               </div>
             </div>
 
-            <hr className="border-slate-200 dark:border-slate-800" />
+            {/* Excerpt */}
+            <div>
+              <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                Excerpt (Meta Summary)
+              </label>
+              <textarea
+                rows={3}
+                placeholder="A compelling 2-3 sentence overview that appears on search engines and card previews..."
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                className="w-full px-4 py-3 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-sm font-body text-[#14213A] placeholder-[#7A7F8C]/60 focus:outline-none focus:border-[#B5723B]"
+              />
+            </div>
+          </div>
 
-            {/* Meta Data */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
-                Meta Data
-              </h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Publish Date
-                </label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
+          {/* Markdown Content Studio */}
+          <div className="bg-white rounded-3xl border border-[#E7E4DC] shadow-sm overflow-hidden">
+            {/* Studio Toolbar */}
+            <div className="p-4 border-b border-[#E7E4DC] flex flex-wrap items-center justify-between gap-3 bg-[#FAFAF8]">
+              {/* Markdown Quick Formatting */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("**", "**")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Bold"
+                >
+                  <Bold size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("*", "*")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Italic"
+                >
+                  <Italic size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("## ", "")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Heading 2"
+                >
+                  <Heading2 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("### ", "")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Heading 3"
+                >
+                  <Heading3 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("- ", "")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Bullet List"
+                >
+                  <List size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("> ", "")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Quote"
+                >
+                  <Quote size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("[Link Text](", ")")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Insert Link"
+                >
+                  <Link2 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertMarkdown("```\n", "\n```")}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Code Block"
+                >
+                  <Code size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={insertTable}
+                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
+                  title="Insert Table"
+                >
+                  <Table size={15} />
+                </button>
               </div>
 
+              {/* View Mode Switcher */}
+              <div className="flex bg-white border border-[#E7E4DC] p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("write")}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                    viewMode === "write"
+                      ? "bg-[#14213A] text-white"
+                      : "text-[#7A7F8C] hover:text-[#14213A]"
+                  }`}
+                >
+                  <Edit3 size={13} /> Write
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("split")}
+                  className={`hidden md:flex px-3 py-1 rounded-lg text-xs font-semibold items-center gap-1.5 transition-colors ${
+                    viewMode === "split"
+                      ? "bg-[#14213A] text-white"
+                      : "text-[#7A7F8C] hover:text-[#14213A]"
+                  }`}
+                >
+                  <FileText size={13} /> Split View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("preview")}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                    viewMode === "preview"
+                      ? "bg-[#14213A] text-white"
+                      : "text-[#7A7F8C] hover:text-[#14213A]"
+                  }`}
+                >
+                  <Eye size={13} /> Live Preview
+                </button>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div
+              className={`grid ${
+                viewMode === "split"
+                  ? "grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#E7E4DC]"
+                  : "grid-cols-1"
+              }`}
+            >
+              {/* Textarea */}
+              {(viewMode === "write" || viewMode === "split") && (
+                <div className="p-4">
+                  <textarea
+                    id="content-textarea"
+                    rows={22}
+                    placeholder="Write your article content using Markdown format...
+
+## Section Title
+
+As your startup scales beyond ₹1 Crore, financial clarity becomes paramount...
+
+- Key metric 1
+- Key metric 2"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="w-full h-full min-h-[460px] bg-transparent border-0 font-mono text-sm text-[#14213A] placeholder-[#7A7F8C]/50 focus:outline-none leading-relaxed resize-y"
+                  />
+                </div>
+              )}
+
+              {/* Preview */}
+              {(viewMode === "preview" || viewMode === "split") && (
+                <div className="p-6 overflow-y-auto max-h-[600px] bg-[#FAFAF8]/50">
+                  <div className="prose prose-sm max-w-none text-[#14213A] space-y-4">
+                    {content ? (
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={{
+                          h1: ({ ...props }) => (
+                            <h1
+                              className="font-heading font-extrabold text-2xl md:text-3xl text-[#14213A] mt-6 mb-4 leading-tight tracking-tight border-b border-[#E7E4DC] pb-2"
+                              {...props}
+                            />
+                          ),
+                          h2: ({ ...props }) => (
+                            <h2
+                              className="font-heading font-bold text-xl md:text-2xl text-[#14213A] mt-6 mb-3 border-b border-[#E7E4DC] pb-2"
+                              {...props}
+                            />
+                          ),
+                          h3: ({ ...props }) => (
+                            <h3
+                              className="font-heading font-semibold text-lg md:text-xl text-[#14213A] mt-5 mb-2 text-[#B5723B]"
+                              {...props}
+                            />
+                          ),
+                          h4: ({ ...props }) => (
+                            <h4
+                              className="font-heading font-semibold text-base text-[#14213A] mt-4 mb-1.5"
+                              {...props}
+                            />
+                          ),
+                          p: ({ ...props }) => (
+                            <p
+                              className="font-body text-sm md:text-base text-[#14213A]/85 leading-relaxed mb-4"
+                              {...props}
+                            />
+                          ),
+                          ul: ({ ...props }) => (
+                            <ul
+                              className="list-disc list-outside ml-5 space-y-1.5 font-body text-sm md:text-base text-[#14213A]/85 my-4"
+                              {...props}
+                            />
+                          ),
+                          ol: ({ ...props }) => (
+                            <ol
+                              className="list-decimal list-outside ml-5 space-y-1.5 font-body text-sm md:text-base text-[#14213A]/85 my-4"
+                              {...props}
+                            />
+                          ),
+                          li: ({ ...props }) => (
+                            <li className="leading-relaxed" {...props} />
+                          ),
+                          blockquote: ({ ...props }) => (
+                            <blockquote
+                              className="border-l-4 border-[#B5723B] pl-4 italic text-[#14213A]/75 my-4 bg-white/70 py-2.5 rounded-r-xl"
+                              {...props}
+                            />
+                          ),
+                          code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<"code">) => {
+                            return (
+                              <code
+                                className="bg-[#E7E4DC]/60 px-1.5 py-0.5 rounded text-xs font-mono text-[#14213A] font-semibold"
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({ ...props }) => (
+                            <pre
+                              className="bg-[#14213A] text-[#FAFAF8] p-4 rounded-2xl overflow-x-auto text-xs font-mono my-4 border border-[#14213A]/20"
+                              {...props}
+                            />
+                          ),
+                          a: ({ ...props }) => (
+                            <a
+                              className="text-[#B5723B] underline font-medium hover:text-[#9A5F2E] transition-colors"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              {...props}
+                            />
+                          ),
+                          hr: ({ ...props }) => (
+                            <hr className="my-6 border-[#E7E4DC]" {...props} />
+                          ),
+                          table: ({ ...props }) => (
+                            <div className="overflow-x-auto my-4 border border-[#E7E4DC] rounded-xl">
+                              <table
+                                className="min-w-full divide-y divide-[#E7E4DC] text-xs text-left"
+                                {...props}
+                              />
+                            </div>
+                          ),
+                          th: ({ ...props }) => (
+                            <th
+                              className="bg-[#FAFAF8] px-4 py-2.5 font-semibold text-[#14213A]"
+                              {...props}
+                            />
+                          ),
+                          td: ({ ...props }) => (
+                            <td
+                              className="px-4 py-2.5 border-t border-[#E7E4DC] text-[#14213A]/80"
+                              {...props}
+                            />
+                          ),
+                        }}
+                      >
+                        {content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="text-xs text-[#7A7F8C] italic">
+                        Type in the editor to see your live preview here.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (Settings Panel): Collapsible with left-sidebar styled button */}
+        <div
+          className={`space-y-6 relative transition-all duration-500 ease-in-out ${
+            isRightSidebarOpen
+              ? "w-full lg:w-80 xl:w-96 opacity-100 scale-100 pointer-events-auto"
+              : "w-0 lg:w-0 opacity-0 scale-95 overflow-hidden invisible pointer-events-none p-0 m-0 border-0 h-0 lg:h-auto"
+          } shrink-0`}
+        >
+          {/* Minimizer Button (Matching Left Sidebar style) */}
+          <button
+            type="button"
+            onClick={() => setIsRightSidebarOpen(false)}
+            className="hidden lg:flex absolute -left-3 top-8 w-6 h-6 bg-white border border-[#E7E4DC] rounded-full items-center justify-center text-[#7A7F8C] hover:text-[#14213A] hover:shadow-sm transition-all duration-300 z-30 shadow-sm"
+            title="Minimize Settings Panel"
+          >
+            <ChevronRight size={14} />
+          </button>
+
+            {/* Post Settings */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E7E4DC] shadow-sm space-y-5">
+              <div className="flex items-center justify-between border-b border-[#E7E4DC] pb-3">
+                <h3 className="font-heading font-bold text-sm text-[#14213A] uppercase tracking-wider">
+                  Publishing Settings
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsRightSidebarOpen(false)}
+                  className="lg:hidden p-1 text-[#7A7F8C] hover:text-[#14213A]"
+                  title="Close Settings"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Category removed per user request */}
+
+              {/* Author Name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
                   Author Name
                 </label>
                 <input
                   type="text"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
-                  placeholder="e.g. Rahul Sharma"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
                 />
               </div>
 
+              {/* Author Role */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
                   Author Designation
                 </label>
                 <input
                   type="text"
                   value={authorRole}
                   onChange={(e) => setAuthorRole(e.target.value)}
-                  placeholder="e.g. Compliance Expert"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
                 />
               </div>
 
+              {/* Date */}
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#7A7F8C] uppercase tracking-wider mb-1.5">
+                    Publish Date
+                  </label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                  />
+                </div>
+              </div>
+
+              {/* Published Status Switch */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Tags (comma separated)
+                <label className="flex items-center justify-between p-3 rounded-2xl bg-[#FAFAF8] border border-[#E7E4DC] cursor-pointer hover:bg-[#F5F3EE] transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <Globe
+                      size={16}
+                      className={published ? "text-[#0E9F6E]" : "text-[#7A7F8C]"}
+                    />
+                    <div>
+                      <p className="text-xs font-bold text-[#14213A]">
+                        {published ? "Live / Published" : "Draft Status"}
+                      </p>
+                      <p className="text-[10px] text-[#7A7F8C]">
+                        {published ? "Visible on public blog" : "Hidden from public"}
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={published}
+                    onChange={(e) => setPublished(e.target.checked)}
+                    className="w-4 h-4 text-[#0E9F6E] rounded focus:ring-0 cursor-pointer"
+                  />
                 </label>
-                <input
-                  type="text"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="e.g. Tax, GST, Income Tax"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
               </div>
             </div>
 
-            <hr className="border-slate-200 dark:border-slate-800" />
-
-            {/* Featured Image */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider">
-                Featured Image
+            {/* Cover Image Upload */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E7E4DC] shadow-sm space-y-4">
+              <h3 className="font-heading font-bold text-sm text-[#14213A] uppercase tracking-wider border-b border-[#E7E4DC] pb-3">
+                Cover Image
               </h3>
-              
+
               {imageUrl ? (
-                <div className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group aspect-video">
-                  <Image src={imageUrl} alt="Featured" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => setImageUrl("")}
-                      className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-                      title="Remove Image"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                <div className="space-y-3">
+                  <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-[#E7E4DC] bg-[#14213A]">
+                    <Image
+                      src={imageUrl}
+                      alt="Cover preview"
+                      fill
+                      className="object-cover"
+                    />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl("")}
+                    className="w-full py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    Remove Cover Image
+                  </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <UploadCloud className="w-8 h-8 mb-3 text-slate-400" />
-                    <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
-                      <span className="font-semibold">Click to upload</span>
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">SVG, PNG, JPG or GIF</p>
+                <div className="space-y-3">
+                  <label className="border-2 border-dashed border-[#E7E4DC] hover:border-[#B5723B] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-[#FAFAF8]">
+                    <UploadCloud
+                      size={28}
+                      className={uploadingImage ? "animate-bounce text-[#B5723B]" : "text-[#7A7F8C]"}
+                    />
+                    <span className="text-xs font-semibold text-[#14213A] mt-2">
+                      {uploadingImage ? "Uploading to Cloud..." : "Upload Cover Image"}
+                    </span>
+                    <span className="text-[10px] text-[#7A7F8C] mt-0.5">
+                      PNG, JPG, WebP up to 5MB
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileChange}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#7A7F8C] mb-1">
+                      Or paste Image URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="https://..."
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                    />
                   </div>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
-                </label>
+                </div>
               )}
-              {uploadingImage && <p className="text-sm text-brand-600 animate-pulse text-center">Uploading...</p>}
             </div>
 
+            {/* Tags */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E7E4DC] shadow-sm space-y-3">
+              <h3 className="font-heading font-bold text-sm text-[#14213A] uppercase tracking-wider border-b border-[#E7E4DC] pb-3">
+                Tags & Topics
+              </h3>
+
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FAFAF8] border border-[#E7E4DC] rounded-full text-xs font-semibold text-[#14213A]"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="text-[#7A7F8C] hover:text-red-600 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="text"
+                  placeholder="Add tag (Press Enter)..."
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  className="flex-1 px-3 py-2 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="p-2 bg-[#14213A] text-white rounded-xl text-xs hover:bg-[#1e3256] transition-colors"
+                >
+                  <Plus size={14} />
+                </button>
+            </div>
           </div>
         </div>
-
-        {/* Toggle Sidebar Button (Desktop) */}
-        <button
-          onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-          className={`
-            hidden lg:flex absolute top-1/2 -translate-y-1/2 z-30
-            p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-l-md shadow-sm text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all
-            ${isRightSidebarOpen ? "right-[320px]" : "right-0 rounded-l-md rounded-r-none"}
-          `}
-        >
-          {isRightSidebarOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
       </div>
-
-      {/* Image Cropper Modal */}
-      {cropImgSrc && (
-        <ImageCropperModal
-          imgSrc={cropImgSrc}
-          aspect={16 / 9}
-          onCropComplete={handleCropComplete}
-          onCancel={() => setCropImgSrc(null)}
-        />
-      )}
     </div>
   );
 }
+
