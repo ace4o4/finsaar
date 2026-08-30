@@ -3,14 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
+import RichEditor from "@/components/admin/RichEditor";
 import {
   ArrowLeft,
   UploadCloud,
-  Eye,
-  Edit3,
   Sparkles,
   CheckCircle,
   AlertCircle,
@@ -18,16 +14,6 @@ import {
   Plus,
   Star,
   Globe,
-  FileText,
-  Bold,
-  Italic,
-  Heading2,
-  Heading3,
-  List,
-  Quote,
-  Code,
-  Link2,
-  Table,
   PanelRightClose,
   PanelRightOpen,
   ChevronLeft,
@@ -77,7 +63,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
   const [imageUrl, setImageUrl] = useState(initialPost?.image || "");
 
   // UI State
-  const [viewMode, setViewMode] = useState<"write" | "preview" | "split">("split");
+
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -164,44 +150,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
     }
   };
 
-  // Toolbar Insert Helper
-  const insertMarkdown = (syntaxStart: string, syntaxEnd = "") => {
-    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement;
-    if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = content.substring(start, end);
-    const replacement = `${syntaxStart}${selected || "text"}${syntaxEnd}`;
-
-    const newContent =
-      content.substring(0, start) + replacement + content.substring(end);
-    setContent(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + syntaxStart.length,
-        start + syntaxStart.length + (selected.length || 4)
-      );
-    }, 50);
-  };
-
-  const insertTable = () => {
-    const tableTemplate = `\n| Metric / Header 1 | Description 2 | Status 3 |\n| :--- | :--- | :--- |\n| Data A | Value 1 | Active |\n| Data B | Value 2 | Completed |\n\n`;
-    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newContent = content.substring(0, start) + tableTemplate + content.substring(end);
-    setContent(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + tableTemplate.length, start + tableTemplate.length);
-    }, 50);
-  };
 
   // Save / Publish Submit Handler
   const handleSubmit = async (publishStatus = published) => {
@@ -417,274 +366,12 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
             </div>
           </div>
 
-          {/* Markdown Content Studio */}
-          <div className="bg-white rounded-3xl border border-[#E7E4DC] shadow-sm overflow-hidden">
-            {/* Studio Toolbar */}
-            <div className="p-4 border-b border-[#E7E4DC] flex flex-wrap items-center justify-between gap-3 bg-[#FAFAF8]">
-              {/* Markdown Quick Formatting */}
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("**", "**")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Bold"
-                >
-                  <Bold size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("*", "*")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Italic"
-                >
-                  <Italic size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("## ", "")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Heading 2"
-                >
-                  <Heading2 size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("### ", "")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Heading 3"
-                >
-                  <Heading3 size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("- ", "")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Bullet List"
-                >
-                  <List size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("> ", "")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Quote"
-                >
-                  <Quote size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("[Link Text](", ")")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Insert Link"
-                >
-                  <Link2 size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("```\n", "\n```")}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Code Block"
-                >
-                  <Code size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={insertTable}
-                  className="p-2 rounded-lg text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors"
-                  title="Insert Table"
-                >
-                  <Table size={15} />
-                </button>
-              </div>
-
-              {/* View Mode Switcher */}
-              <div className="flex bg-white border border-[#E7E4DC] p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("write")}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                    viewMode === "write"
-                      ? "bg-[#14213A] text-white"
-                      : "text-[#7A7F8C] hover:text-[#14213A]"
-                  }`}
-                >
-                  <Edit3 size={13} /> Write
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("split")}
-                  className={`hidden md:flex px-3 py-1 rounded-lg text-xs font-semibold items-center gap-1.5 transition-colors ${
-                    viewMode === "split"
-                      ? "bg-[#14213A] text-white"
-                      : "text-[#7A7F8C] hover:text-[#14213A]"
-                  }`}
-                >
-                  <FileText size={13} /> Split View
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("preview")}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                    viewMode === "preview"
-                      ? "bg-[#14213A] text-white"
-                      : "text-[#7A7F8C] hover:text-[#14213A]"
-                  }`}
-                >
-                  <Eye size={13} /> Live Preview
-                </button>
-              </div>
-            </div>
-
-            {/* Content Area */}
-            <div
-              className={`grid ${
-                viewMode === "split"
-                  ? "grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#E7E4DC]"
-                  : "grid-cols-1"
-              }`}
-            >
-              {/* Textarea */}
-              {(viewMode === "write" || viewMode === "split") && (
-                <div className="p-4">
-                  <textarea
-                    id="content-textarea"
-                    rows={22}
-                    placeholder="Write your article content using Markdown format...
-
-## Section Title
-
-As your startup scales beyond ₹1 Crore, financial clarity becomes paramount...
-
-- Key metric 1
-- Key metric 2"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="w-full h-full min-h-[460px] bg-transparent border-0 font-mono text-sm text-[#14213A] placeholder-[#7A7F8C]/50 focus:outline-none leading-relaxed resize-y"
-                  />
-                </div>
-              )}
-
-              {/* Preview */}
-              {(viewMode === "preview" || viewMode === "split") && (
-                <div className="p-6 overflow-y-auto max-h-[600px] bg-[#FAFAF8]/50">
-                  <div className="prose prose-sm max-w-none text-[#14213A] space-y-4">
-                    {content ? (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        components={{
-                          h1: ({ ...props }) => (
-                            <h1
-                              className="font-heading font-extrabold text-2xl md:text-3xl text-[#14213A] mt-6 mb-4 leading-tight tracking-tight border-b border-[#E7E4DC] pb-2"
-                              {...props}
-                            />
-                          ),
-                          h2: ({ ...props }) => (
-                            <h2
-                              className="font-heading font-bold text-xl md:text-2xl text-[#14213A] mt-6 mb-3 border-b border-[#E7E4DC] pb-2"
-                              {...props}
-                            />
-                          ),
-                          h3: ({ ...props }) => (
-                            <h3
-                              className="font-heading font-semibold text-lg md:text-xl text-[#14213A] mt-5 mb-2 text-[#B5723B]"
-                              {...props}
-                            />
-                          ),
-                          h4: ({ ...props }) => (
-                            <h4
-                              className="font-heading font-semibold text-base text-[#14213A] mt-4 mb-1.5"
-                              {...props}
-                            />
-                          ),
-                          p: ({ ...props }) => (
-                            <p
-                              className="font-body text-sm md:text-base text-[#14213A]/85 leading-relaxed mb-4"
-                              {...props}
-                            />
-                          ),
-                          ul: ({ ...props }) => (
-                            <ul
-                              className="list-disc list-outside ml-5 space-y-1.5 font-body text-sm md:text-base text-[#14213A]/85 my-4"
-                              {...props}
-                            />
-                          ),
-                          ol: ({ ...props }) => (
-                            <ol
-                              className="list-decimal list-outside ml-5 space-y-1.5 font-body text-sm md:text-base text-[#14213A]/85 my-4"
-                              {...props}
-                            />
-                          ),
-                          li: ({ ...props }) => (
-                            <li className="leading-relaxed" {...props} />
-                          ),
-                          blockquote: ({ ...props }) => (
-                            <blockquote
-                              className="border-l-4 border-[#B5723B] pl-4 italic text-[#14213A]/75 my-4 bg-white/70 py-2.5 rounded-r-xl"
-                              {...props}
-                            />
-                          ),
-                          code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<"code">) => {
-                            return (
-                              <code
-                                className="bg-[#E7E4DC]/60 px-1.5 py-0.5 rounded text-xs font-mono text-[#14213A] font-semibold"
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            );
-                          },
-                          pre: ({ ...props }) => (
-                            <pre
-                              className="bg-[#14213A] text-[#FAFAF8] p-4 rounded-2xl overflow-x-auto text-xs font-mono my-4 border border-[#14213A]/20"
-                              {...props}
-                            />
-                          ),
-                          a: ({ ...props }) => (
-                            <a
-                              className="text-[#B5723B] underline font-medium hover:text-[#9A5F2E] transition-colors"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              {...props}
-                            />
-                          ),
-                          hr: ({ ...props }) => (
-                            <hr className="my-6 border-[#E7E4DC]" {...props} />
-                          ),
-                          table: ({ ...props }) => (
-                            <div className="overflow-x-auto my-4 border border-[#E7E4DC] rounded-xl">
-                              <table
-                                className="min-w-full divide-y divide-[#E7E4DC] text-xs text-left"
-                                {...props}
-                              />
-                            </div>
-                          ),
-                          th: ({ ...props }) => (
-                            <th
-                              className="bg-[#FAFAF8] px-4 py-2.5 font-semibold text-[#14213A]"
-                              {...props}
-                            />
-                          ),
-                          td: ({ ...props }) => (
-                            <td
-                              className="px-4 py-2.5 border-t border-[#E7E4DC] text-[#14213A]/80"
-                              {...props}
-                            />
-                          ),
-                        }}
-                      >
-                        {content}
-                      </ReactMarkdown>
-                    ) : (
-                      <p className="text-xs text-[#7A7F8C] italic">
-                        Type in the editor to see your live preview here.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Rich Text / Markdown Editor */}
+          <RichEditor
+            content={content}
+            onChange={setContent}
+            placeholder="Start writing your blog post..."
+          />
         </div>
 
         {/* Right Column (Settings Panel): Collapsible with left-sidebar styled button */}
