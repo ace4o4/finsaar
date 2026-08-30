@@ -12,7 +12,6 @@ export function mapDbCalendarToCalendarPost(p: DatabaseCalendar): CalendarPost {
     author: p.author,
     authorRole: p.author_role,
     tags: p.tags,
-    date: p.date,
     published: p.published,
     image: p.image || undefined,
   };
