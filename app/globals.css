@@ -133,6 +133,19 @@ input[type="range"]::-moz-range-thumb {
   color: #14213A;
 }
 
+.tiptap-editor-container .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: inline-block;
+  margin: 0.5rem 1rem 0.5rem 0;
+}
+
+.tiptap-editor-container .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
 .tiptap-editor-container .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;

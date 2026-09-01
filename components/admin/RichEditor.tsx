@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Table } from "@tiptap/extension-table";
@@ -41,7 +42,11 @@ import {
   Columns3,
   Maximize,
   Minimize,
+  Paperclip,
+  Images,
+  X,
 } from "lucide-react";
+import ImageResize from "tiptap-extension-resize-image";
 
 // ── Turndown (HTML → Markdown) ──────────────────────────────────────
 const turndown = new TurndownService({
@@ -287,6 +292,11 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
+  // Gallery states
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+  const [isGalleryMinimized, setIsGalleryMinimized] = useState(false);
+  
   const tablePickerRef = useRef<HTMLDivElement>(null);
   const linkBtnRef = useRef<HTMLDivElement>(null);
 
@@ -306,6 +316,10 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
       }),
       Placeholder.configure({
         placeholder: placeholder || "Start writing your content here...\n\nUse the toolbar above to format text, insert tables, add links, and more. Or press Cmd+B for bold, Cmd+I for italic.",
+      }),
+      ImageResize.configure({
+        inline: true,
+        allowBase64: true,
       }),
     ],
     content: markdownToHtml(content),
@@ -420,6 +434,37 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     },
     [insertMarkdownSyntax, markdownContent, handleMarkdownChange]
   );
+
+  // Handle gallery image upload
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newImages: string[] = [];
+    let processed = 0;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          newImages.push(event.target.result as string);
+        }
+        processed++;
+        if (processed === files.length) {
+          setUploadedImages((prev) => [...prev, ...newImages]);
+          setShowGallery(true);
+          setIsGalleryMinimized(false);
+          // reset input
+          e.target.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeGalleryImage = (indexToRemove: number) => {
+    setUploadedImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   // DOCX / MD import
   const handleImportFile = useCallback(
@@ -572,6 +617,39 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
             accept=".md,.txt,.docx"
             onChange={handleImportFile}
           />
+          
+          {/* Gallery Attachment */}
+          <button
+            type="button"
+            onClick={() => document.getElementById("rich-editor-gallery-import")?.click()}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors flex items-center gap-1.5 border border-[#E7E4DC]"
+            title="Attach images"
+          >
+            <Paperclip size={14} />
+          </button>
+          <input
+            type="file"
+            id="rich-editor-gallery-import"
+            className="hidden"
+            accept="image/*"
+            multiple
+            onChange={handleGalleryUpload}
+          />
+
+          {/* Show Gallery Icon (if minimized and has images) */}
+          {uploadedImages.length > 0 && isGalleryMinimized && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowGallery(true);
+                setIsGalleryMinimized(false);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-copper hover:bg-copper-dark transition-colors flex items-center gap-1.5"
+              title="Open Image Gallery"
+            >
+              <Images size={14} />
+            </button>
+          )}
           <div className="w-px h-6 bg-[#E7E4DC] mx-1 hidden sm:block" />
           <button
             type="button"
@@ -772,6 +850,98 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
           />
         </div>
       )}
+
+      {/* Floating Canva-style Image Gallery */}
+      <AnimatePresence>
+        {showGallery && uploadedImages.length > 0 && !isGalleryMinimized && (
+          <motion.div
+            drag
+            dragMomentum={false}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed z-[110] bg-white rounded-2xl shadow-2xl border border-[#E7E4DC] overflow-hidden flex flex-col"
+            style={{ 
+              top: "8rem", 
+              left: "calc(100vw - 380px)", 
+              width: "320px", 
+              height: "400px", 
+              resize: "both" 
+            }}
+          >
+            {/* Header / Drag Handle */}
+            <div className="p-3 bg-[#FAFAF8] border-b border-[#E7E4DC] flex items-center justify-between cursor-move select-none shrink-0">
+              <div className="flex items-center gap-2">
+                <Images size={16} className="text-[#3a3f4d]" />
+                <span className="font-heading font-semibold text-sm text-[#14213A]">Images</span>
+              </div>
+              <div className="flex items-center gap-1 cursor-default">
+                <button
+                  type="button"
+                  onClick={() => setIsGalleryMinimized(true)}
+                  className="p-1 text-[#7A7F8C] hover:text-[#14213A] hover:bg-[#E7E4DC] rounded transition-colors"
+                  title="Minimize"
+                >
+                  <Minus size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Gallery Grid */}
+            <div className="p-3 overflow-y-auto flex-1 bg-white">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-[#7A7F8C] font-body">Drag into the editor.</p>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("rich-editor-gallery-import")?.click()}
+                  className="text-xs font-semibold text-copper hover:text-[#9a5d2b] transition-colors"
+                >
+                  + Add More
+                </button>
+              </div>
+              <div 
+                className="grid gap-2" 
+                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}
+              >
+                {uploadedImages.map((src, index) => (
+                  <div 
+                    key={index}
+                    className="relative aspect-square rounded-lg border border-[#E7E4DC] overflow-hidden group cursor-grab active:cursor-grabbing hover:border-copper transition-colors"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/html", `<img src="${src}" alt="Uploaded Image" />`);
+                      e.dataTransfer.effectAllowed = "copy";
+                      e.currentTarget.style.opacity = '0.5';
+                    }}
+                    onDragEnd={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                  >
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeGalleryImage(index);
+                      }}
+                      className="absolute top-1 right-1 z-20 bg-white/80 hover:bg-red-500 hover:text-white text-gray-700 rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      title="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={`Uploaded ${index + 1}`}
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
