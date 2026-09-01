@@ -39,6 +39,8 @@ import {
   Trash2,
   Rows3,
   Columns3,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 
 // ── Turndown (HTML → Markdown) ──────────────────────────────────────
@@ -192,11 +194,10 @@ function TableSizePicker({ onSelect, onClose }: { onSelect: (rows: number, cols:
             <button
               key={i}
               type="button"
-              className={`w-5 h-5 rounded-[3px] border transition-all duration-75 ${
-                active
+              className={`w-5 h-5 rounded-[3px] border transition-all duration-75 ${active
                   ? "bg-[#B5723B] border-[#B5723B]"
                   : "bg-[#FAFAF8] border-[#E7E4DC] hover:border-[#B5723B]/40"
-              }`}
+                }`}
               onMouseEnter={() => { setHoverRow(r); setHoverCol(c); }}
               onClick={() => onSelect(r, c)}
             />
@@ -267,11 +268,10 @@ function ToolbarBtn({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-2 rounded-lg transition-colors ${
-        active
+      className={`p-2 rounded-lg transition-colors ${active
           ? "bg-[#14213A] text-white"
           : "text-[#3a3f4d] hover:bg-[#E7E4DC]"
-      } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+        } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
     >
       {children}
     </button>
@@ -285,6 +285,8 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   const tablePickerRef = useRef<HTMLDivElement>(null);
   const linkBtnRef = useRef<HTMLDivElement>(null);
 
@@ -314,7 +316,7 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[460px] p-6 text-[#14213A] leading-relaxed",
+        class: `prose prose-sm max-w-none focus:outline-none p-6 text-[#14213A] leading-relaxed ${isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[460px]'}`,
       },
     },
   });
@@ -498,31 +500,52 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     [mode, editor, insertMarkdownSyntax]
   );
 
+  // Listen to escape key for exiting fullscreen
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isFullscreen]);
+
+  // Lock body scroll when fullscreen
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isFullscreen]);
+
   if (!editor) return null;
 
   const isRich = mode === "rich";
 
   return (
-    <div className="bg-white rounded-3xl border border-[#E7E4DC] shadow-sm overflow-hidden">
+    <div className={`bg-white transition-all duration-200 ${isFullscreen ? "fixed inset-0 z-[100] w-full h-screen rounded-none flex flex-col m-0" : "rounded-3xl border border-[#E7E4DC] shadow-sm overflow-hidden relative"}`}>
       {/* Top Bar: Mode Switch + Import */}
-      <div className="p-3 border-b border-[#E7E4DC] flex items-center justify-between gap-3 bg-[#FAFAF8]">
+      <div className="p-3 border-b border-[#E7E4DC] flex items-center justify-between gap-3 bg-[#FAFAF8] shrink-0">
         {/* Mode Toggle */}
         <div className="flex bg-white border border-[#E7E4DC] p-1 rounded-xl">
           <button
             type="button"
             onClick={() => handleModeSwitch("rich")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              isRich ? "bg-[#14213A] text-white" : "text-[#7A7F8C] hover:text-[#14213A]"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${isRich ? "bg-[#14213A] text-white" : "text-[#7A7F8C] hover:text-[#14213A]"
+              }`}
           >
             <Type size={13} /> Rich Text
           </button>
           <button
             type="button"
             onClick={() => handleModeSwitch("markdown")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              !isRich ? "bg-[#14213A] text-white" : "text-[#7A7F8C] hover:text-[#14213A]"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${!isRich ? "bg-[#14213A] text-white" : "text-[#7A7F8C] hover:text-[#14213A]"
+              }`}
           >
             <FileCode2 size={13} /> Markdown
           </button>
@@ -531,7 +554,7 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
         <div className="flex items-center gap-2">
           {/* Import feedback */}
           {importFeedback && (
-            <span className="text-xs font-semibold text-[#0E9F6E] animate-pulse">{importFeedback}</span>
+            <span className="text-xs font-semibold text-[#0E9F6E] animate-pulse hidden md:inline-block">{importFeedback}</span>
           )}
           {/* Import button */}
           <button
@@ -549,11 +572,22 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
             accept=".md,.txt,.docx"
             onChange={handleImportFile}
           />
+          <div className="w-px h-6 bg-[#E7E4DC] mx-1 hidden sm:block" />
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 border ${isFullscreen ? "bg-[#14213A] text-white border-[#14213A]" : "text-[#3a3f4d] border-[#E7E4DC] hover:bg-[#E7E4DC]"
+              }`}
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+            <span className="hidden sm:inline">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+          </button>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="p-2 px-3 border-b border-[#E7E4DC] flex flex-wrap items-center gap-0.5 bg-white">
+      <div className="p-2 px-3 border-b border-[#E7E4DC] flex flex-wrap items-center gap-0.5 bg-white shrink-0">
         {/* Undo / Redo */}
         <ToolbarBtn
           onClick={() => isRich ? editor.chain().focus().undo().run() : undefined}
