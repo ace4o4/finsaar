@@ -29,7 +29,7 @@ const navLinks = [
   },
 ];
 
-export default function Navbar({ onOpenContact }: { onOpenContact: () => void }) {
+export default function Navbar({ onOpenContact }: { onOpenContact?: () => void }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -210,7 +210,7 @@ export default function Navbar({ onOpenContact }: { onOpenContact: () => void })
                   className="w-full"
                   onClick={() => {
                     setMobileOpen(false);
-                    onOpenContact();
+                    onOpenContact?.();
                   }}
                 >
                   Book a Strategy Call
