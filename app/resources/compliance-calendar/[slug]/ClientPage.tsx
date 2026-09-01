@@ -16,7 +16,7 @@ export function ComplianceCalendarDetailClient() {
   );
 }
 
-export function ShareButton({ title }: { title: string }) {
+export function ShareButton({ title, className }: { title: string, className?: string }) {
   return (
     <button 
       onClick={() => {
@@ -31,7 +31,7 @@ export function ShareButton({ title }: { title: string }) {
         }
       }}
       title="Share this calendar"
-      className="w-10 h-10 rounded-full bg-sand-light/50 flex items-center justify-center text-navy/60 hover:bg-copper hover:text-white transition-all"
+      className={className || "w-10 h-10 rounded-full bg-sand-light/50 flex items-center justify-center text-navy/60 hover:bg-copper hover:text-white transition-all"}
     >
       <Share2 size={16} />
     </button>

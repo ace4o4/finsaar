@@ -36,10 +36,10 @@ body {
 
 /* Layout overflow controls */
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Custom scrollbar */
