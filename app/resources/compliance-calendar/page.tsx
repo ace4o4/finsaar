@@ -154,10 +154,13 @@ export default function ComplianceCalendarPage() {
                               </div>
                             ) : (
                               <div className="w-full h-full bg-[#FBF9F6] border border-sand/50 rounded-[16px] flex flex-col justify-center items-center group-hover:border-copper/20 transition-colors">
-                                <span className="font-heading font-bold text-3xl text-navy uppercase leading-none mb-1 group-hover:text-copper transition-colors">
+                                <span className="font-heading font-bold text-4xl text-navy leading-none mb-1 group-hover:text-copper transition-colors">
+                                  {new Date(cal.date).toLocaleDateString("en-US", { day: "2-digit" })}
+                                </span>
+                                <span className="font-heading font-bold text-xl text-navy/80 uppercase tracking-wider mb-0.5">
                                   {new Date(cal.date).toLocaleDateString("en-US", { month: "short" })}
                                 </span>
-                                <span className="font-heading font-semibold text-lg text-navy/40">
+                                <span className="font-heading font-semibold text-sm text-navy/40">
                                   {new Date(cal.date).toLocaleDateString("en-US", { year: "numeric" })}
                                 </span>
                               </div>
