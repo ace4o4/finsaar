@@ -899,10 +899,7 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
                   + Add More
                 </button>
               </div>
-              <div 
-                className="grid gap-2" 
-                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}
-              >
+              <div className="grid grid-cols-2 gap-2">
                 {uploadedImages.map((src, index) => (
                   <div 
                     key={index}
