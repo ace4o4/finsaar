@@ -16,6 +16,8 @@ import mammoth from "mammoth";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import { uploadBlogImage } from "@/lib/blog-service";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   Bold,
   Italic,
@@ -296,6 +298,7 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [isGalleryMinimized, setIsGalleryMinimized] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   
   const tablePickerRef = useRef<HTMLDivElement>(null);
   const linkBtnRef = useRef<HTMLDivElement>(null);
@@ -436,30 +439,49 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   );
 
   // Handle gallery image upload
-  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    setIsUploadingGallery(true);
     const newImages: string[] = [];
-    let processed = 0;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          newImages.push(event.target.result as string);
+    for (const file of Array.from(files)) {
+      if (isSupabaseConfigured) {
+        try {
+          const res = await uploadBlogImage(file);
+          if (res.success && res.url) {
+            newImages.push(res.url);
+          } else {
+            console.error("Failed to upload image:", res.error);
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
         }
-        processed++;
-        if (processed === files.length) {
-          setUploadedImages((prev) => [...prev, ...newImages]);
-          setShowGallery(true);
-          setIsGalleryMinimized(false);
-          // reset input
-          e.target.value = '';
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+      } else {
+        // Fallback to Base64 for local dev preview without Supabase
+        await new Promise<void>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            if (event.target?.result) {
+              newImages.push(event.target.result as string);
+            }
+            resolve();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    if (newImages.length > 0) {
+      setUploadedImages((prev) => [...prev, ...newImages]);
+      setShowGallery(true);
+      setIsGalleryMinimized(false);
+    }
+    
+    // reset input
+    e.target.value = '';
+    setIsUploadingGallery(false);
   };
 
   const removeGalleryImage = (indexToRemove: number) => {
@@ -621,11 +643,20 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
           {/* Gallery Attachment */}
           <button
             type="button"
+            disabled={isUploadingGallery}
             onClick={() => document.getElementById("rich-editor-gallery-import")?.click()}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#3a3f4d] hover:bg-[#E7E4DC] transition-colors flex items-center gap-1.5 border border-[#E7E4DC]"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+              isUploadingGallery 
+                ? "bg-gray-100 text-gray-400 border-transparent cursor-not-allowed" 
+                : "text-[#3a3f4d] border-[#E7E4DC] hover:bg-[#E7E4DC]"
+            }`}
             title="Attach images"
           >
-            <Paperclip size={14} />
+            {isUploadingGallery ? (
+              <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Paperclip size={14} />
+            )}
           </button>
           <input
             type="file"
@@ -633,6 +664,7 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
             className="hidden"
             accept="image/*"
             multiple
+            disabled={isUploadingGallery}
             onChange={handleGalleryUpload}
           />
 
@@ -893,10 +925,22 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
                 <p className="text-xs text-[#7A7F8C] font-body">Drag into the editor.</p>
                 <button
                   type="button"
+                  disabled={isUploadingGallery}
                   onClick={() => document.getElementById("rich-editor-gallery-import")?.click()}
-                  className="text-xs font-semibold text-copper hover:text-[#9a5d2b] transition-colors"
+                  className={`text-xs font-semibold transition-colors ${
+                    isUploadingGallery 
+                      ? "text-[#7A7F8C] cursor-not-allowed flex items-center gap-1.5" 
+                      : "text-copper hover:text-[#9a5d2b]"
+                  }`}
                 >
-                  + Add More
+                  {isUploadingGallery ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "+ Add More"
+                  )}
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
