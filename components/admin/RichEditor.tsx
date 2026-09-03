@@ -551,6 +551,37 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
     setIsUploadingGallery(false);
   };
 
+  // Handle inline image upload from Slash Command
+  const handleInlineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (isSupabaseConfigured) {
+      try {
+        const res = await uploadBlogImage(file);
+        if (res.success && res.url) {
+          editor?.chain().focus().setImage({ src: res.url }).run();
+        } else {
+          console.error("Failed to upload inline image:", res.error);
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+      }
+    } else {
+      // Fallback to Base64 for local dev preview without Supabase
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          editor?.chain().focus().setImage({ src: event.target.result as string }).run();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // reset input
+    e.target.value = '';
+  };
+
   const removeGalleryImage = (indexToRemove: number) => {
     setUploadedImages((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
@@ -767,6 +798,13 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
             multiple
             disabled={isUploadingGallery}
             onChange={handleGalleryUpload}
+          />
+          <input
+            type="file"
+            id="rich-editor-inline-image"
+            className="hidden"
+            accept="image/*"
+            onChange={handleInlineImageUpload}
           />
 
           {/* Show Gallery Icon (if minimized and has images) */}

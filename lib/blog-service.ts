@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured, DatabasePost } from "./supabase";
 import { BlogPost, blogPosts as fallbackPosts } from "./blog-data";
 
+let cachedBlogPosts: BlogPost[] | null = null;
+
 export function mapDbPostToBlogPost(p: DatabasePost): BlogPost {
   return {
     id: p.id,
@@ -53,10 +55,19 @@ export async function getBlogPosts(options?: {
     return posts;
   }
 
+  // Use client-side cache if available
+  if (typeof window !== 'undefined' && cachedBlogPosts && !options?.includeDrafts) {
+    let posts = [...cachedBlogPosts];
+    if (options?.category && options.category !== "All") {
+      posts = posts.filter((p) => p.category === options.category);
+    }
+    return posts;
+  }
+
   try {
     let query = supabase
       .from("posts")
-      .select("*")
+      .select("id, slug, title, excerpt, category, author, author_role, date, read_time, featured, published, tags, image, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (!options?.includeDrafts) {
@@ -79,7 +90,14 @@ export async function getBlogPosts(options?: {
       return posts;
     }
 
-    return data.map(mapDbPostToBlogPost);
+    const mappedPosts = data.map(mapDbPostToBlogPost);
+    
+    // Save to cache if we are on the client and fetching published posts
+    if (typeof window !== 'undefined' && !options?.includeDrafts && (!options?.category || options.category === "All")) {
+      cachedBlogPosts = mappedPosts;
+    }
+
+    return mappedPosts;
   } catch (err) {
     console.error("Error fetching blog posts:", err);
     return fallbackPosts;

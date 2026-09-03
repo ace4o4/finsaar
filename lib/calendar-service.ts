@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured, DatabaseCalendar } from "./supabase";
 import { CalendarPost, calendarPosts as fallbackPosts } from "./calendar-data";
 
+let cachedCalendarPosts: CalendarPost[] | null = null;
+
 export function mapDbCalendarToCalendarPost(p: DatabaseCalendar): CalendarPost {
   return {
     id: p.id,
@@ -45,10 +47,15 @@ export async function getCalendarPosts(options?: {
     return posts;
   }
 
+  // Use client-side cache if available
+  if (typeof window !== 'undefined' && cachedCalendarPosts && !options?.includeDrafts) {
+    return [...cachedCalendarPosts];
+  }
+
   try {
     let query = supabase
       .from("compliance_calendars")
-      .select("*")
+      .select("id, slug, title, excerpt, category, author, author_role, date, published, tags, image, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (!options?.includeDrafts) {
@@ -62,7 +69,14 @@ export async function getCalendarPosts(options?: {
       return [...fallbackPosts];
     }
 
-    return data.map(mapDbCalendarToCalendarPost);
+    const mappedPosts = data.map(mapDbCalendarToCalendarPost);
+    
+    // Save to cache if we are on the client and fetching published posts
+    if (typeof window !== 'undefined' && !options?.includeDrafts) {
+      cachedCalendarPosts = mappedPosts;
+    }
+
+    return mappedPosts;
   } catch (err) {
     console.error("Error fetching calendar posts:", err);
     return fallbackPosts;

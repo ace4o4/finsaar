@@ -7,96 +7,64 @@ export default function Loading() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 pt-[72px] bg-white animate-pulse">
-        
-        {/* Post Header Skeleton */}
-        <section className="bg-white py-12 md:py-20 border-b border-sand/40">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="inline-flex items-center gap-2 font-body text-sm text-navy/20 mb-8">
-              <ArrowLeft size={16} /> <div className="h-4 w-32 bg-sand rounded"></div>
-            </div>
+      <main className="flex-1 bg-white pt-[72px]">
+        {/* Hero Skeleton */}
+        <section className="relative w-full min-h-[50vh] flex flex-col justify-end pt-32 pb-16 bg-navy overflow-hidden animate-pulse">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="w-32 h-4 bg-white/10 rounded mb-8"></div>
+            <div className="w-3/4 md:w-1/2 h-12 md:h-16 bg-white/20 rounded-lg mb-8"></div>
             
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-6 w-24 bg-sand/80 rounded-full"></div>
-              <div className="flex items-center gap-1.5 text-xs">
-                <Clock size={14} className="text-navy/20" /> <div className="h-3 w-16 bg-sand rounded"></div>
-              </div>
-            </div>
-
-            <div className="h-10 md:h-14 bg-sand/70 rounded-lg w-3/4 mb-4"></div>
-            <div className="h-10 md:h-14 bg-sand/70 rounded-lg w-1/2 mb-6"></div>
-            
-            <div className="h-5 bg-sand/50 rounded w-full mb-3"></div>
-            <div className="h-5 bg-sand/50 rounded w-11/12 mb-3"></div>
-            <div className="h-5 bg-sand/50 rounded w-4/5 mb-8"></div>
-
-            <div className="flex items-center justify-between py-6 border-y border-sand/40">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-sand/80"></div>
-                <div>
-                  <div className="h-4 w-24 bg-sand/70 rounded mb-2"></div>
-                  <div className="h-3 w-32 bg-sand/50 rounded"></div>
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                <div className="flex flex-col gap-1">
+                  <div className="w-16 h-3 bg-white/10 rounded"></div>
+                  <div className="w-24 h-4 bg-white/20 rounded"></div>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end">
-                <div className="flex items-center gap-1.5 justify-end mb-2">
-                  <Calendar size={14} className="text-navy/20" /> <div className="h-3 w-16 bg-sand rounded"></div>
-                </div>
-                <div className="h-4 w-28 bg-sand/70 rounded"></div>
+              <div className="w-px h-8 bg-white/10 hidden md:block"></div>
+              <div className="flex flex-col gap-1">
+                <div className="w-16 h-3 bg-white/10 rounded"></div>
+                <div className="w-24 h-4 bg-white/20 rounded"></div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Featured Image Skeleton */}
-        <section className="py-8 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative w-full h-[300px] md:h-[500px] rounded-3xl bg-sand/40 border border-sand/30"></div>
-          </div>
-        </section>
-
-        {/* Post Content Skeleton */}
-        <section className="py-12 md:py-20">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-12">
+        {/* Content Skeleton */}
+        <section className="py-16 md:py-32 bg-white">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20">
+            {/* Sidebar Skeleton */}
+            <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 animate-pulse">
+              <div className="w-full h-[500px] bg-sand-light/60 rounded-[24px]"></div>
+            </aside>
             
-            {/* Social Share sidebar skeleton */}
-            <div className="md:w-16 shrink-0 order-2 md:order-1">
-              <div className="flex md:flex-col gap-4 items-center">
-                <div className="h-3 w-10 md:w-3 md:h-10 bg-sand/60 rounded mb-4"></div>
-                <div className="w-8 h-8 rounded-full bg-sand/60"></div>
-                <div className="w-8 h-8 rounded-full bg-sand/60"></div>
-                <div className="w-8 h-8 rounded-full bg-sand/60"></div>
-              </div>
-            </div>
-
-            {/* Markdown Body Skeleton */}
-            <article className="order-1 md:order-2 flex-1 min-w-0">
-              <div className="h-8 bg-sand/70 rounded w-1/3 mt-8 mb-6"></div>
-              <div className="space-y-4 mb-8">
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
-                <div className="h-4 bg-sand/40 rounded w-11/12"></div>
-                <div className="h-4 bg-sand/40 rounded w-4/5"></div>
+            {/* Article Skeleton */}
+            <article className="order-1 lg:order-2 flex-1 min-w-0 animate-pulse">
+              <div className="h-8 bg-sand/40 rounded w-1/3 mb-6"></div>
+              <div className="space-y-4 mb-12">
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-11/12"></div>
+                <div className="h-4 bg-sand/30 rounded w-4/5"></div>
               </div>
               
-              <div className="h-6 bg-sand/70 rounded w-1/4 mt-8 mb-4"></div>
-              <div className="space-y-4 mb-8">
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
-                <div className="h-4 bg-sand/40 rounded w-10/12"></div>
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
+              <div className="h-8 bg-sand/40 rounded w-1/4 mb-6"></div>
+              <div className="space-y-4 mb-12">
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-10/12"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
               </div>
 
-              <div className="h-6 bg-sand/70 rounded w-2/5 mt-8 mb-4"></div>
+              <div className="h-8 bg-sand/40 rounded w-2/5 mb-6"></div>
               <div className="space-y-4">
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
-                <div className="h-4 bg-sand/40 rounded w-full"></div>
-                <div className="h-4 bg-sand/40 rounded w-9/12"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-9/12"></div>
               </div>
             </article>
-
           </div>
         </section>
-
       </main>
       <Footer />
     </>

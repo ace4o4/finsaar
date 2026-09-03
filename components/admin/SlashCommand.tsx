@@ -148,7 +148,7 @@ const getSuggestionItems = ({ query }: { query: string }) => {
       command: ({ editor, range }: any) => { 
         editor.chain().focus().deleteRange(range).run();
         // Trigger the hidden file input in RichEditor
-        document.getElementById("rich-editor-gallery-import")?.click();
+        document.getElementById("rich-editor-inline-image")?.click();
       } 
     },
   ];

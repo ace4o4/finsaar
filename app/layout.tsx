@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import MouseEffects from "@/components/MouseEffects";
 import SmoothScroll from "@/components/SmoothScroll";
+import BackgroundWakeup from "@/components/BackgroundWakeup";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
         <SmoothScroll>
           <MouseEffects />
+          <BackgroundWakeup />
           {children}
         </SmoothScroll>
       </body>

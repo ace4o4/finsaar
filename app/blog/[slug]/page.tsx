@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import Image from "next/image";
+import CalendarSidebarCTA from "@/components/CalendarSidebarCTA";
 
 export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const [contactOpen, setContactOpen] = useState(false);
@@ -39,11 +40,64 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center flex flex-col items-center gap-3">
-          <RefreshCw size={24} className="animate-spin text-copper" />
-          <p className="text-sm font-body text-navy/60">Loading insight...</p>
-        </div>
+      <div className="flex-1 bg-white pt-[72px]">
+        {/* Hero Skeleton */}
+        <section className="relative w-full min-h-[50vh] flex flex-col justify-end pt-32 pb-16 bg-navy overflow-hidden animate-pulse">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="w-32 h-4 bg-white/10 rounded mb-8"></div>
+            <div className="w-3/4 md:w-1/2 h-12 md:h-16 bg-white/20 rounded-lg mb-8"></div>
+            
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                <div className="flex flex-col gap-1">
+                  <div className="w-16 h-3 bg-white/10 rounded"></div>
+                  <div className="w-24 h-4 bg-white/20 rounded"></div>
+                </div>
+              </div>
+              <div className="w-px h-8 bg-white/10 hidden md:block"></div>
+              <div className="flex flex-col gap-1">
+                <div className="w-16 h-3 bg-white/10 rounded"></div>
+                <div className="w-24 h-4 bg-white/20 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Content Skeleton */}
+        <section className="py-16 md:py-32 bg-white">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20">
+            {/* Sidebar Skeleton */}
+            <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 animate-pulse">
+              <div className="w-full h-[500px] bg-sand-light/60 rounded-[24px]"></div>
+            </aside>
+            
+            {/* Article Skeleton */}
+            <article className="order-1 lg:order-2 flex-1 min-w-0 animate-pulse">
+              <div className="h-8 bg-sand/40 rounded w-1/3 mb-6"></div>
+              <div className="space-y-4 mb-12">
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-11/12"></div>
+                <div className="h-4 bg-sand/30 rounded w-4/5"></div>
+              </div>
+              
+              <div className="h-8 bg-sand/40 rounded w-1/4 mb-6"></div>
+              <div className="space-y-4 mb-12">
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-10/12"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+              </div>
+
+              <div className="h-8 bg-sand/40 rounded w-2/5 mb-6"></div>
+              <div className="space-y-4">
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-full"></div>
+                <div className="h-4 bg-sand/30 rounded w-9/12"></div>
+              </div>
+            </article>
+          </div>
+        </section>
       </div>
     );
   }
@@ -57,99 +111,69 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
       <Navbar onOpenContact={() => setContactOpen(true)} />
       <main className="flex-1 pt-[72px] bg-white">
         
-        {/* Post Header */}
-        <section className="bg-white py-12 md:py-20 border-b border-sand/40">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link href="/blog" className="inline-flex items-center gap-2 font-body text-sm text-navy/50 hover:text-copper transition-colors mb-8">
+        {/* Post Header / Hero */}
+        <section className="relative w-full min-h-[50vh] flex flex-col justify-end pt-32 pb-16 bg-navy overflow-hidden">
+          {post.image && (
+            <div className="absolute inset-0 z-0">
+              <Image src={post.image} alt={post.title} fill className="object-cover opacity-40 mix-blend-overlay" priority />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/80 to-transparent" />
+            </div>
+          )}
+          
+          <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 w-full">
+            <Link href="/blog" className="inline-flex items-center gap-2 font-body text-sm text-sand/70 hover:text-sand transition-colors mb-6">
               <ArrowLeft size={16} /> Back to Insights
             </Link>
             
-            <div className="flex items-center gap-3 mb-6">
-              <span className="px-3 py-1 bg-copper/10 text-copper rounded-full text-xs font-heading font-semibold uppercase tracking-wider">
-                {post.category}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs font-body text-navy/50">
-                <Clock size={14} /> {post.readTime} read
-              </span>
-            </div>
-
-            <h1 className="font-heading font-extrabold text-3xl md:text-5xl text-navy leading-tight mb-6">
+            <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-8 max-w-5xl">
               {post.title}
             </h1>
-            
-            <p className="font-body text-lg text-navy/60 mb-8 leading-relaxed">
-              {post.excerpt}
-            </p>
 
-            <div className="flex items-center justify-between py-6 border-y border-sand/40">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-copper/20 flex items-center justify-center">
-                  <span className="font-heading font-bold text-navy">
-                    {post.author.split(" ").map(n => n[0]).join("")}
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-sand/20 flex items-center justify-center">
+                  <span className="font-heading font-bold text-white text-sm">
+                    {post.author ? post.author.split(" ").map((n: string) => n[0]).join("") : "F"}
                   </span>
                 </div>
                 <div>
-                  <p className="font-heading font-semibold text-navy">{post.author}</p>
-                  <p className="font-body text-xs text-navy/50">{post.authorRole}</p>
+                  <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider mb-0.5">Written By</p>
+                  <p className="font-heading font-semibold text-sm text-white">{post.author}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="flex items-center gap-1.5 font-body text-xs text-navy/50 justify-end mb-2">
-                  <Calendar size={14} /> Published
+
+              <div className="w-px h-8 bg-sand/20 hidden md:block"></div>
+
+              <div className="flex flex-col gap-0.5">
+                <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider">Published On</p>
+                <p className="font-body font-medium text-sm text-white flex items-center gap-1.5">
+                  <Calendar size={14} className="text-copper" /> {post.date}
                 </p>
-                <p className="font-body text-sm font-medium text-navy">{post.date}</p>
+              </div>
+
+              <div className="w-px h-8 bg-sand/20 hidden md:block"></div>
+
+              <div className="flex flex-col gap-0.5">
+                <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider">Category</p>
+                <span className="px-3 py-1 bg-copper/20 text-copper-light rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider mt-0.5 w-max">
+                  {post.category}
+                </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Featured Image */}
-        {post.image && (
-          <section className="py-8 bg-white">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="relative w-full h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border border-sand/30">
-                <Image src={post.image} alt={post.title} fill className="object-cover" />
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Post Content */}
-        <section className="py-12 md:py-20">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-12">
+        <section className="py-16 md:py-32 bg-white">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20 relative">
             
-            {/* Social Share sidebar - sticky */}
-            <div className="md:w-16 shrink-0 order-2 md:order-1">
-              <div className="sticky top-24 flex md:flex-col gap-4 items-center">
-                <p className="font-heading font-semibold text-xs text-navy/40 uppercase tracking-widest md:[writing-mode:vertical-rl] md:mb-4">Share</p>
-                {/* <button className="w-10 h-10 rounded-full bg-sand-light/50 flex items-center justify-center text-navy/60 hover:bg-copper hover:text-white transition-all">
-                  <Globe size={16} />
-                </button>
-                <button className="w-10 h-10 rounded-full bg-sand-light/50 flex items-center justify-center text-navy/60 hover:bg-copper hover:text-white transition-all">
-                  <MessageCircle size={16} />
-                </button> */}
-                <button 
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: post.title,
-                        url: window.location.href,
-                      }).catch(console.error);
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert("Link copied to clipboard!");
-                    }
-                  }}
-                  title="Share this post"
-                  className="w-10 h-10 rounded-full bg-sand-light/50 flex items-center justify-center text-navy/60 hover:bg-copper hover:text-white transition-all"
-                >
-                  <Share2 size={16} />
-                </button>
-              </div>
-            </div>
+            {/* Sidebar CTA - sticky */}
+            <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 sticky top-32 self-start max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pb-8">
+              <CalendarSidebarCTA />
+            </aside>
 
             {/* Markdown Body */}
-            <article className="order-1 md:order-2 flex-1 min-w-0">
+            <article className="order-1 lg:order-2 flex-1 w-full max-w-5xl font-body text-navy/80">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkBreaks]}
                 rehypePlugins={[rehypeRaw]}
@@ -179,10 +203,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                     />
                   ),
                   p: ({ ...props }) => (
-                    <p
-                      className="font-body text-base text-navy/80 leading-relaxed mb-5"
-                      {...props}
-                    />
+                    <p className="text-[16px] md:text-[17px] leading-relaxed mb-6 text-navy/80" {...props} />
                   ),
                   ul: ({ ...props }) => (
                     <ul

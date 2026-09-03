@@ -79,8 +79,30 @@ export default function ComplianceCalendarPage() {
               {/* Main Content Area (Right) */}
               <div className="flex-1">
                 {loading ? (
-                  <div className="flex justify-center items-center py-24">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-copper"></div>
+                  <div className="flex flex-col gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="bg-white rounded-[20px] p-6 md:p-8 flex flex-col sm:flex-row gap-6 md:gap-8 border border-sand/30 animate-pulse">
+                        <div className="w-full sm:w-[120px] md:w-[140px] shrink-0 h-40 sm:h-32 bg-sand-light/60 rounded-[20px]" />
+                        <div className="flex-1 flex flex-col justify-between py-1">
+                          <div>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="w-48 h-6 bg-sand-light/60 rounded-full" />
+                              <div className="flex gap-3">
+                                <div className="w-4 h-4 bg-sand-light/60 rounded-full" />
+                                <div className="w-4 h-4 bg-sand-light/60 rounded-full" />
+                                <div className="w-4 h-4 bg-sand-light/60 rounded-full" />
+                              </div>
+                            </div>
+                            <div className="w-3/4 h-6 bg-sand-light/60 rounded mb-3" />
+                            <div className="w-full h-4 bg-sand-light/60 rounded mb-1.5" />
+                            <div className="w-5/6 h-4 bg-sand-light/60 rounded" />
+                          </div>
+                          <div className="mt-6 pt-3 border-t border-sand/20 flex justify-between">
+                             <div className="w-20 h-4 bg-sand-light/60 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : calendars.length === 0 ? (
                   <div className="bg-white rounded-[24px] p-12 text-center shadow-sm border border-black/5">
