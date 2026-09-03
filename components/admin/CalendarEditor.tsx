@@ -260,20 +260,26 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
 
           <button
             type="button"
-            onClick={() => handleSubmit(false)}
+            onClick={() => {
+              setPublished(false);
+              handleSubmit(false);
+            }}
             disabled={saving}
             className="px-4 py-2.5 rounded-xl border border-[#E7E4DC] bg-white text-xs font-semibold text-[#14213A] hover:bg-[#F5F3EE] transition-all disabled:opacity-50"
           >
-            Save Draft
+            {isEdit && !published ? "Update Draft" : "Save Draft"}
           </button>
           <button
             type="button"
-            onClick={() => handleSubmit(true)}
+            onClick={() => {
+              setPublished(true);
+              handleSubmit(true);
+            }}
             disabled={saving}
             className="px-5 py-2.5 rounded-xl bg-[#14213A] hover:bg-[#1e3256] text-white text-xs font-heading font-semibold shadow-md shadow-[#14213A]/10 transition-all flex items-center gap-2 disabled:opacity-50"
           >
             <Sparkles size={14} className="text-[#B5723B]" />
-            {saving ? "Publishing..." : isEdit ? "Update Article" : "Publish Article"}
+            {saving ? "Processing..." : (isEdit && published ? "Update Article" : "Publish Article")}
           </button>
         </div>
       </div>
