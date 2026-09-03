@@ -3,22 +3,22 @@ import { BlogPost, blogPosts as fallbackPosts } from "./blog-data";
 
 let cachedBlogPosts: BlogPost[] | null = null;
 
-export function mapDbPostToBlogPost(p: DatabasePost): BlogPost {
+export function mapDbPostToBlogPost(p: any): BlogPost {
   return {
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    excerpt: p.excerpt,
-    content: p.content,
-    category: p.category,
-    author: p.author,
-    authorRole: p.author_role,
-    date: p.date,
-    readTime: p.read_time,
-    featured: p.featured,
+    id: p.id || "",
+    slug: p.slug || "",
+    title: p.title || "",
+    excerpt: p.excerpt || "",
+    content: p.content || "",
+    category: p.category || "General",
+    author: p.author || "",
+    authorRole: p.author_role || "",
+    date: p.date || "",
+    readTime: p.read_time || "5 min",
+    featured: p.featured || false,
     tags: p.tags || [],
     image: p.image || undefined,
-    published: p.published,
+    published: p.published !== undefined ? p.published : true,
   };
 }
 

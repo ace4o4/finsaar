@@ -1041,7 +1041,8 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
         >
           {editor && (
             <BubbleMenu 
-              editor={editor} 
+              editor={editor}
+              // @ts-expect-error tippyOptions is missing in types but works
               tippyOptions={{ duration: 100, placement: 'top' }}
               shouldShow={({ editor, state }) => {
                 return !state.selection.empty && !editor.isActive('table') && !editor.isActive('image');

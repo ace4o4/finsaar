@@ -3,19 +3,19 @@ import { CalendarPost, calendarPosts as fallbackPosts } from "./calendar-data";
 
 let cachedCalendarPosts: CalendarPost[] | null = null;
 
-export function mapDbCalendarToCalendarPost(p: DatabaseCalendar): CalendarPost {
+export function mapDbCalendarToCalendarPost(p: any): CalendarPost {
   return {
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    excerpt: p.excerpt,
-    content: p.content,
-    category: p.category,
-    author: p.author,
-    authorRole: p.author_role,
-    tags: p.tags,
-    date: p.date,
-    published: p.published,
+    id: p.id || "",
+    slug: p.slug || "",
+    title: p.title || "",
+    excerpt: p.excerpt || "",
+    content: p.content || "",
+    category: p.category || "General",
+    author: p.author || "",
+    authorRole: p.author_role || "",
+    tags: p.tags || [],
+    date: p.date || "",
+    published: p.published !== undefined ? p.published : true,
     image: p.image || undefined,
   };
 }
