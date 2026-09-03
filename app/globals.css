@@ -273,6 +273,7 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid #E7E4DC;
   border-radius: 0.75rem;
   overflow: hidden;
+  table-layout: fixed;
 }
 
 .tiptap-editor-container .tiptap th {
@@ -283,6 +284,8 @@ input[type="range"]::-moz-range-thumb {
   text-align: left;
   border: 1px solid #E7E4DC;
   color: #14213A;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .tiptap-editor-container .tiptap td {
@@ -291,6 +294,8 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid #E7E4DC;
   color: rgba(20, 33, 58, 0.8);
   min-width: 80px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .tiptap-editor-container .tiptap td:hover,

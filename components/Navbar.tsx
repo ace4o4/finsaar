@@ -16,8 +16,8 @@ const navLinks = [
       { label: "CFO as a Service", href: "/services/cfo-as-a-service", desc: "Strategic financial leadership for growth", icon: TrendingUp }
     ]
   },
-  { label: "Calculator", href: "/calculator" },
-  // { label: "Blog", href: "/blog" },
+  // { label: "Calculator", href: "/calculator" },
+  { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
   { 
     label: "Resources", 

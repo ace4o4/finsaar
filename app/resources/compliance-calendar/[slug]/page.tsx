@@ -122,16 +122,16 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
         </section>
 
         {/* Post Content */}
-        <section className="py-12 md:py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row lg:items-start gap-12 lg:gap-16 relative">
+        <section className="py-16 md:py-32 bg-white">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20 relative">
             
             {/* Sidebar CTA - sticky */}
-            <aside className="lg:w-[380px] shrink-0 order-2 lg:order-1 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pb-8">
+            <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 sticky top-32 self-start max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pb-8">
               <CalendarSidebarCTA />
             </aside>
 
             {/* Markdown Body */}
-            <article className="order-1 lg:order-2 flex-1 min-w-0 font-body text-navy/80">
+            <article className="order-1 lg:order-2 flex-1 w-full max-w-5xl font-body text-navy/80">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkBreaks]}
                 rehypePlugins={[rehypeRaw]}
@@ -149,7 +149,7 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
                     <h4 className="font-heading font-semibold text-base md:text-xl text-navy mt-6 mb-3" {...props} />
                   ),
                   p: ({ ...props }) => (
-                    <p className="text-base md:text-[17px] leading-[1.8] md:leading-[2] mb-6 tracking-wide" {...props} />
+                    <p className="text-[16px] md:text-[17px] leading-relaxed mb-6 text-navy/80" {...props} />
                   ),
                   strong: ({ ...props }) => (
                     <strong className="font-bold text-navy bg-sand-light/30 px-1 py-0.5 rounded" {...props} />

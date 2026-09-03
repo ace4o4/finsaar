@@ -362,6 +362,7 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
             content={content}
             onChange={setContent}
             placeholder="Start writing your calendar post..."
+            draftKey={`calendar_${initialPost?.id || 'new'}`}
           />
         </div>
 

@@ -371,6 +371,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
             content={content}
             onChange={setContent}
             placeholder="Start writing your blog post..."
+            draftKey={`blog_${initialPost?.id || 'new'}`}
           />
         </div>
 

@@ -36,6 +36,7 @@ const commonCategories = [
 export default function AdminComplianceCalendarPage() {
   const [items, setItems] = useState<ComplianceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [actionMessage, setActionMessage] = useState<{
     type: "success" | "error";
@@ -55,11 +56,23 @@ export default function AdminComplianceCalendarPage() {
 
   const fetchItems = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
-      const data = await getComplianceItems();
-      setItems(data);
+      const data = await Promise.race([
+        getComplianceItems(),
+        new Promise<ComplianceItem[]>((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 10000)
+        )
+      ]);
+      
+      if (!data) {
+        setFetchError(true);
+      } else {
+        setItems(data);
+      }
     } catch (err) {
       console.error("Failed to load compliance items:", err);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -278,6 +291,22 @@ export default function AdminComplianceCalendarPage() {
         <div className="p-16 text-center bg-white rounded-3xl border border-[#E7E4DC]">
           <RefreshCw size={24} className="animate-spin text-[#B5723B] mx-auto mb-3" />
           <p className="text-xs text-[#7A7F8C]">Loading compliance deadlines...</p>
+        </div>
+      ) : fetchError ? (
+        <div className="text-center p-10 flex flex-col items-center">
+          <AlertCircle size={32} className="text-red-500 mb-3" />
+          <p className="font-heading font-semibold text-lg text-[#14213A]">
+            Connection Failed
+          </p>
+          <p className="text-sm text-[#7A7F8C] mt-1 max-w-md">
+            We couldn't connect to the database. It might be asleep or there's a network issue.
+          </p>
+          <button
+            onClick={fetchItems}
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#14213A] text-white rounded-xl text-xs font-semibold hover:bg-navy/80 transition-colors"
+          >
+            <RefreshCw size={14} /> Retry Connection
+          </button>
         </div>
       ) : items.length === 0 ? (
         <div className="p-16 text-center space-y-3 bg-white rounded-3xl border border-[#E7E4DC]">

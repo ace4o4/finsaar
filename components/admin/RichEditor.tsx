@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
@@ -18,6 +19,8 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { uploadBlogImage } from "@/lib/blog-service";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import CharacterCount from "@tiptap/extension-character-count";
+import { SlashCommand } from "./SlashCommand";
 import {
   Bold,
   Italic,
@@ -168,12 +171,15 @@ interface RichEditorProps {
   content: string;
   onChange: (markdown: string) => void;
   placeholder?: string;
+  draftKey?: string;
 }
 
 // ── Table Size Picker ───────────────────────────────────────────────
 function TableSizePicker({ onSelect, onClose }: { onSelect: (rows: number, cols: number) => void; onClose: () => void }) {
   const [hoverRow, setHoverRow] = useState(0);
   const [hoverCol, setHoverCol] = useState(0);
+  const [customRows, setCustomRows] = useState("");
+  const [customCols, setCustomCols] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -210,6 +216,36 @@ function TableSizePicker({ onSelect, onClose }: { onSelect: (rows: number, cols:
             />
           );
         })}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-[#E7E4DC] flex items-center gap-1.5">
+        <input 
+          type="number" 
+          min="1" max="100" 
+          placeholder="R" 
+          value={customRows} 
+          onChange={(e) => setCustomRows(e.target.value)} 
+          className="w-12 h-7 text-xs bg-[#FAFAF8] border border-[#E7E4DC] rounded-md text-center focus:outline-none focus:border-[#B5723B]" 
+        />
+        <span className="text-xs text-[#7A7F8C]">×</span>
+        <input 
+          type="number" 
+          min="1" max="100" 
+          placeholder="C" 
+          value={customCols} 
+          onChange={(e) => setCustomCols(e.target.value)} 
+          className="w-12 h-7 text-xs bg-[#FAFAF8] border border-[#E7E4DC] rounded-md text-center focus:outline-none focus:border-[#B5723B]" 
+        />
+        <button 
+          onClick={() => {
+            const r = parseInt(customRows);
+            const c = parseInt(customCols);
+            if (r > 0 && c > 0) onSelect(r, c);
+          }}
+          className="ml-auto px-2 py-1.5 bg-[#14213A] text-white text-[10px] uppercase tracking-wider font-bold rounded hover:bg-[#14213A]/90 transition-colors"
+        >
+          Add
+        </button>
       </div>
     </div>
   );
@@ -272,6 +308,7 @@ function ToolbarBtn({
   return (
     <button
       type="button"
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       disabled={disabled}
       title={title}
@@ -286,7 +323,10 @@ function ToolbarBtn({
 }
 
 // ── Main Component ──────────────────────────────────────────────────
-export default function RichEditor({ content, onChange, placeholder }: RichEditorProps) {
+export default function RichEditor({ content, onChange, placeholder, draftKey }: RichEditorProps) {
+  const [, forceUpdate] = useState(0);
+  const triggerUpdate = () => forceUpdate(x => x + 1);
+  
   const [mode, setMode] = useState<"rich" | "markdown">("rich");
   const [markdownContent, setMarkdownContent] = useState(content);
   const [showTablePicker, setShowTablePicker] = useState(false);
@@ -294,11 +334,18 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
+  // Auto-Save states
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [draftExists, setDraftExists] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
   // Gallery states
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [isGalleryMinimized, setIsGalleryMinimized] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [tableContextMenu, setTableContextMenu] = useState<{ x: number, y: number, show: boolean } | null>(null);
   
   const tablePickerRef = useRef<HTMLDivElement>(null);
   const linkBtnRef = useRef<HTMLDivElement>(null);
@@ -318,11 +365,20 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
         HTMLAttributes: { class: "text-[#B5723B] underline cursor-pointer" },
       }),
       Placeholder.configure({
-        placeholder: placeholder || "Start writing your content here...\n\nUse the toolbar above to format text, insert tables, add links, and more. Or press Cmd+B for bold, Cmd+I for italic.",
+        placeholder: ({ node }) => {
+          if (node.type.name === 'heading') {
+            return 'What\'s the title?';
+          }
+          return 'Press "/" for commands, or write your content...';
+        },
       }),
       ImageResize.configure({
         inline: true,
         allowBase64: true,
+      }),
+      SlashCommand,
+      CharacterCount.configure({
+        limit: null,
       }),
     ],
     content: markdownToHtml(content),
@@ -369,6 +425,17 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     },
     [mode, editor, markdownContent]
   );
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleMouseDown = () => {
+      if (tableContextMenu?.show) {
+        setTableContextMenu(null);
+      }
+    };
+    window.addEventListener("mousedown", handleMouseDown);
+    return () => window.removeEventListener("mousedown", handleMouseDown);
+  }, [tableContextMenu]);
 
   // Markdown textarea change
   const handleMarkdownChange = useCallback(
@@ -533,6 +600,40 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     [mode, editor, onChange, handleMarkdownChange]
   );
 
+  // Check for draft on mount
+  useEffect(() => {
+    if (draftKey && !draftRestored) {
+      const saved = localStorage.getItem(`draft_${draftKey}`);
+      if (saved && saved !== content) {
+        setDraftExists(true);
+      }
+    }
+  }, [draftKey, content, draftRestored]);
+
+  // Auto save interval
+  useEffect(() => {
+    if (!autoSaveEnabled || !draftKey) return;
+    const interval = setInterval(() => {
+      localStorage.setItem(`draft_${draftKey}`, markdownContent);
+      setLastSaved(new Date());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [autoSaveEnabled, draftKey, markdownContent]);
+
+  const restoreDraft = () => {
+    if (!draftKey) return;
+    const saved = localStorage.getItem(`draft_${draftKey}`);
+    if (saved) {
+      setMarkdownContent(saved);
+      if (editor) {
+        editor.commands.setContent(markdownToHtml(saved));
+      }
+      onChange(saved);
+      setDraftExists(false);
+      setDraftRestored(true);
+    }
+  };
+
   // Table select handler
   const handleTableSelect = useCallback(
     (rows: number, cols: number) => {
@@ -682,6 +783,21 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
               <Images size={14} />
             </button>
           )}
+
+          {draftKey && (
+            <div className="flex items-center gap-2 mr-2">
+              <span className="text-[10px] font-semibold text-[#7A7F8C] uppercase tracking-wider hidden sm:inline">Auto-Save</span>
+              <button
+                type="button"
+                onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+                className={`w-7 h-4 rounded-full flex items-center transition-colors px-[2px] ${autoSaveEnabled ? "bg-[#B5723B]" : "bg-[#E7E4DC]"}`}
+              >
+                <div className={`w-3 h-3 rounded-full bg-white shadow-sm transition-transform ${autoSaveEnabled ? "translate-x-3" : "translate-x-0"}`} />
+              </button>
+              {lastSaved && <span className="text-[9px] text-[#7A7F8C] italic hidden sm:inline">Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+            </div>
+          )}
+
           <div className="w-px h-6 bg-[#E7E4DC] mx-1 hidden sm:block" />
           <button
             type="button"
@@ -718,21 +834,30 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
 
         {/* Text Formatting */}
         <ToolbarBtn
-          onClick={() => isRich ? editor.chain().focus().toggleBold().run() : insertMarkdownSyntax("**", "**")}
+          onClick={() => {
+            isRich ? editor.chain().focus().toggleBold().run() : insertMarkdownSyntax("**", "**");
+            triggerUpdate();
+          }}
           active={isRich ? editor.isActive("bold") : false}
           title="Bold (Cmd+B)"
         >
           <Bold size={15} />
         </ToolbarBtn>
         <ToolbarBtn
-          onClick={() => isRich ? editor.chain().focus().toggleItalic().run() : insertMarkdownSyntax("*", "*")}
+          onClick={() => {
+            isRich ? editor.chain().focus().toggleItalic().run() : insertMarkdownSyntax("*", "*");
+            triggerUpdate();
+          }}
           active={isRich ? editor.isActive("italic") : false}
           title="Italic (Cmd+I)"
         >
           <Italic size={15} />
         </ToolbarBtn>
         <ToolbarBtn
-          onClick={() => isRich ? editor.chain().focus().toggleUnderline().run() : insertMarkdownSyntax("<u>", "</u>")}
+          onClick={() => {
+            isRich ? editor.chain().focus().toggleUnderline().run() : insertMarkdownSyntax("<u>", "</u>");
+            triggerUpdate();
+          }}
           active={isRich ? editor.isActive("underline") : false}
           title="Underline (Cmd+U)"
         >
@@ -743,14 +868,22 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
 
         {/* Headings */}
         <ToolbarBtn
-          onClick={() => isRich ? editor.chain().focus().toggleHeading({ level: 2 }).run() : insertMarkdownSyntax("## ", "")}
+          onClick={() => {
+            if (isRich) editor.chain().focus().toggleHeading({ level: 2 }).run();
+            else insertMarkdownSyntax("## ", "");
+            triggerUpdate();
+          }}
           active={isRich ? editor.isActive("heading", { level: 2 }) : false}
           title="Heading 2"
         >
           <Heading2 size={15} />
         </ToolbarBtn>
         <ToolbarBtn
-          onClick={() => isRich ? editor.chain().focus().toggleHeading({ level: 3 }).run() : insertMarkdownSyntax("### ", "")}
+          onClick={() => {
+            if (isRich) editor.chain().focus().toggleHeading({ level: 3 }).run();
+            else insertMarkdownSyntax("### ", "");
+            triggerUpdate();
+          }}
           active={isRich ? editor.isActive("heading", { level: 3 }) : false}
           title="Heading 3"
         >
@@ -841,33 +974,99 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
           )}
         </div>
 
-        {/* Table editing controls (only when inside a table in rich mode) */}
-        {isRich && editor.isActive("table") && (
-          <>
-            <div className="w-px h-6 bg-[#E7E4DC] mx-1" />
-            <ToolbarBtn onClick={() => editor.chain().focus().addRowAfter().run()} title="Add Row Below">
-              <div className="flex items-center gap-0.5"><Rows3 size={13} /><Plus size={10} /></div>
-            </ToolbarBtn>
-            <ToolbarBtn onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add Column Right">
-              <div className="flex items-center gap-0.5"><Columns3 size={13} /><Plus size={10} /></div>
-            </ToolbarBtn>
-            <ToolbarBtn onClick={() => editor.chain().focus().deleteRow().run()} title="Delete Row">
-              <div className="flex items-center gap-0.5"><Rows3 size={13} /><Trash2 size={10} className="text-red-500" /></div>
-            </ToolbarBtn>
-            <ToolbarBtn onClick={() => editor.chain().focus().deleteColumn().run()} title="Delete Column">
-              <div className="flex items-center gap-0.5"><Columns3 size={13} /><Trash2 size={10} className="text-red-500" /></div>
-            </ToolbarBtn>
-            <ToolbarBtn onClick={() => editor.chain().focus().deleteTable().run()} title="Delete Table">
-              <Trash2 size={14} className="text-red-500" />
-            </ToolbarBtn>
-          </>
-        )}
       </div>
+
+      {/* Draft Restore Banner */}
+      {draftExists && (
+        <div className="bg-[#FAFAF8] border-b border-[#E7E4DC] p-2 px-4 flex items-center justify-between shrink-0">
+          <span className="text-xs text-[#7A7F8C] flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#B5723B] rounded-full animate-pulse" /> An unsaved draft was found for this post.</span>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setDraftExists(false)} className="text-xs text-[#7A7F8C] hover:text-[#14213A] underline transition-colors">Dismiss</button>
+            <button type="button" onClick={restoreDraft} className="text-xs font-semibold text-[#B5723B] hover:text-copper-dark underline transition-colors">Restore Draft</button>
+          </div>
+        </div>
+      )}
 
       {/* Editor Content Area */}
       {isRich ? (
-        <div className="tiptap-editor-container">
+        <div 
+          className="tiptap-editor-container relative"
+          onContextMenu={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('table')) {
+              e.preventDefault();
+              setTableContextMenu({ x: e.clientX, y: e.clientY, show: true });
+            } else {
+              setTableContextMenu(null);
+            }
+          }}
+        >
+          {editor && (
+            <BubbleMenu 
+              editor={editor} 
+              tippyOptions={{ duration: 100, placement: 'top' }}
+              shouldShow={({ editor, state }) => {
+                return !state.selection.empty && !editor.isActive('table') && !editor.isActive('image');
+              }}
+              className="flex items-center gap-1 bg-white border border-sand shadow-xl rounded-xl p-1.5 z-[100]"
+            >
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { editor.chain().focus().toggleBold().run(); triggerUpdate(); }} className={`p-1.5 rounded hover:bg-sand/50 transition-colors ${editor.isActive('bold') ? 'bg-sand/80 text-navy' : 'text-[#7A7F8C]'}`}><Bold size={15} /></button>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { editor.chain().focus().toggleItalic().run(); triggerUpdate(); }} className={`p-1.5 rounded hover:bg-sand/50 transition-colors ${editor.isActive('italic') ? 'bg-sand/80 text-navy' : 'text-[#7A7F8C]'}`}><Italic size={15} /></button>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { editor.chain().focus().toggleUnderline().run(); triggerUpdate(); }} className={`p-1.5 rounded hover:bg-sand/50 transition-colors ${editor.isActive('underline') ? 'bg-sand/80 text-navy' : 'text-[#7A7F8C]'}`}><UnderlineIcon size={15} /></button>
+              <div className="w-px h-4 bg-[#E7E4DC] mx-0.5" />
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); triggerUpdate(); }} className={`p-1.5 rounded hover:bg-sand/50 transition-colors ${editor.isActive('heading', { level: 2 }) ? 'bg-sand/80 text-navy' : 'text-[#7A7F8C]'}`}><Heading2 size={15} /></button>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { editor.chain().focus().toggleHeading({ level: 3 }).run(); triggerUpdate(); }} className={`p-1.5 rounded hover:bg-sand/50 transition-colors ${editor.isActive('heading', { level: 3 }) ? 'bg-sand/80 text-navy' : 'text-[#7A7F8C]'}`}><Heading3 size={15} /></button>
+            </BubbleMenu>
+          )}
+
+          {/* Table Context Menu (Right Click) */}
+          <AnimatePresence>
+            {tableContextMenu?.show && editor?.isActive("table") && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.1 }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="fixed z-[9999] bg-white border border-sand shadow-2xl rounded-xl p-1.5 flex flex-col min-w-[180px]"
+                style={{ top: tableContextMenu.y, left: tableContextMenu.x }}
+              >
+                <button type="button" onClick={() => { editor.chain().focus().addRowBefore().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-[#14213A] hover:bg-sand/40 rounded-lg transition-colors w-full text-left">
+                  <Rows3 size={14} className="text-[#7A7F8C]" /> Add Row Above
+                </button>
+                <button type="button" onClick={() => { editor.chain().focus().addRowAfter().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-[#14213A] hover:bg-sand/40 rounded-lg transition-colors w-full text-left">
+                  <Rows3 size={14} className="text-[#7A7F8C]" /> Add Row Below
+                </button>
+                <div className="h-px w-full bg-[#E7E4DC] my-1" />
+                <button type="button" onClick={() => { editor.chain().focus().addColumnBefore().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-[#14213A] hover:bg-sand/40 rounded-lg transition-colors w-full text-left">
+                  <Columns3 size={14} className="text-[#7A7F8C]" /> Add Column Left
+                </button>
+                <button type="button" onClick={() => { editor.chain().focus().addColumnAfter().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-[#14213A] hover:bg-sand/40 rounded-lg transition-colors w-full text-left">
+                  <Columns3 size={14} className="text-[#7A7F8C]" /> Add Column Right
+                </button>
+                <div className="h-px w-full bg-[#E7E4DC] my-1" />
+                <button type="button" onClick={() => { editor.chain().focus().deleteRow().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left">
+                  <Rows3 size={14} /> Delete Row
+                </button>
+                <button type="button" onClick={() => { editor.chain().focus().deleteColumn().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left">
+                  <Columns3 size={14} /> Delete Column
+                </button>
+                <div className="h-px w-full bg-[#E7E4DC] my-1" />
+                <button type="button" onClick={() => { editor.chain().focus().deleteTable().run(); setTableContextMenu(null); }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left">
+                  <Trash2 size={14} /> Delete Table
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
           <EditorContent editor={editor} />
+          
+          {/* Word Count & Reading Time Footer */}
+          {editor && (
+            <div className="absolute bottom-2 right-4 text-[11px] font-medium text-[#7A7F8C] bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md border border-sand/50 shadow-sm pointer-events-none">
+              {editor.storage.characterCount.words()} words | {Math.ceil(editor.storage.characterCount.words() / 200)} min read
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-4">

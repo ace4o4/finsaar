@@ -86,11 +86,10 @@ export async function getCalendarPostBySlug(slug: string): Promise<CalendarPost 
       .single();
 
     if (error || !data) {
-      if (error && error.code !== 'PGRST116') {
-        console.error(`Supabase getCalendarPostBySlug error for slug ${slug}:`, error);
+      if (error && error.code !== "PGRST116") {
+        console.error(`Supabase getCalendarPostBySlug (${slug}) error:`, error);
       }
-      const fallback = fallbackPosts.find((p) => p.slug === slug);
-      return fallback || null;
+      return fallbackPosts.find((p) => p.slug === slug) || null;
     }
 
     return mapDbCalendarToCalendarPost(data as DatabaseCalendar);

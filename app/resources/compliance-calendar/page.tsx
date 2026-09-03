@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, Calendar as CalendarIcon, PhoneCall, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
+import CalendarSidebarCTA from "@/components/CalendarSidebarCTA";
 
 const FacebookIcon = ({ size = 14, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -67,51 +68,12 @@ export default function ComplianceCalendarPage() {
         />
 
         <section className="relative z-10 -mt-10">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
-            <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 xl:gap-24">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+            <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
               
               {/* Sidebar Area (Left) */}
-              <div className="w-full lg:w-[350px] shrink-0 flex flex-col gap-12">
-                {/* Newsletter Form */}
-                <div className="pt-2">
-                  <h3 className="font-heading font-bold text-lg text-navy mb-4">Stay updated with our Newsletter</h3>
-                  <div className="flex shadow-sm rounded-md overflow-hidden border border-sand">
-                    <input 
-                      type="email" 
-                      placeholder="Enter your email id" 
-                      className="flex-1 px-4 py-3 min-w-0 focus:outline-none focus:bg-white bg-white/50 text-sm" 
-                    />
-                    <button className="bg-[#F5C77E] hover:bg-[#E5B76E] text-navy font-bold text-xs px-4 py-3 transition-colors shrink-0 uppercase tracking-wide">
-                      SUBSCRIBE
-                    </button>
-                  </div>
-                </div>
-
-                {/* Contact Form */}
-                <div>
-                  <h3 className="font-heading font-bold text-lg text-navy mb-5 inline-block border-b-2 border-navy pb-1">Get in touch with us</h3>
-                  <form className="flex flex-col gap-4 mt-2">
-                    <div className="flex gap-4">
-                      <input type="text" placeholder="Name*" className="flex-1 w-1/2 border border-sand bg-white/50 rounded-md px-4 py-3 focus:outline-none focus:bg-white text-sm" />
-                      <input type="tel" placeholder="Phone*" className="flex-1 w-1/2 border border-sand bg-white/50 rounded-md px-4 py-3 focus:outline-none focus:bg-white text-sm" />
-                    </div>
-                    <input type="email" placeholder="Email*" className="w-full border border-sand bg-white/50 rounded-md px-4 py-3 focus:outline-none focus:bg-white text-sm" />
-                    <textarea placeholder="Your Message*" rows={5} className="w-full border border-sand bg-white/50 rounded-md px-4 py-3 focus:outline-none focus:bg-white resize-none text-sm"></textarea>
-                    
-                    <p className="text-xs text-navy/70 mb-2">Your information is confidential and secure</p>
-                    
-                    <button type="button" className="w-full bg-[#F5C77E] hover:bg-[#E5B76E] text-navy font-bold py-3.5 rounded-md transition-colors text-sm uppercase tracking-wide">
-                      SUBMIT
-                    </button>
-                    
-                    <div className="text-center font-bold text-sm my-1 text-navy/80">Or</div>
-                    
-                    <button type="button" className="w-full bg-[#2A7B6B] hover:bg-[#1f5c50] text-white font-bold py-3.5 rounded-md transition-colors flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
-                      <PhoneCall size={16} />
-                      BOOK A CONSULTATION
-                    </button>
-                  </form>
-                </div>
+              <div className="w-full lg:w-[350px] shrink-0 flex flex-col gap-12 pt-6">
+                <CalendarSidebarCTA />
               </div>
 
               {/* Main Content Area (Right) */}
@@ -127,21 +89,21 @@ export default function ComplianceCalendarPage() {
                     <p className="text-navy/70">Check back soon for upcoming compliance deadlines.</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-10">
-                    {calendars.map((cal, i) => (
+                  <div className="flex flex-col gap-6">
+                    {calendars.map((cal, index) => (
                       <motion.div
-                        key={cal.slug}
+                        key={cal.id}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: i * 0.1 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
                       >
                         <Link 
                           href={`/resources/compliance-calendar/${cal.slug}`}
-                          className="group flex flex-col sm:flex-row gap-6 lg:gap-8 bg-white border border-sand/40 hover:border-copper/30 shadow-[0_4px_20px_rgba(20,33,58,0.02)] hover:shadow-[0_12px_40px_rgba(20,33,58,0.06)] p-4 md:p-5 rounded-[20px] transition-all duration-500 items-stretch h-full"
+                          className="group bg-white rounded-[20px] p-6 md:p-8 flex flex-col sm:flex-row gap-6 md:gap-8 border border-black/5 hover:border-copper/20 hover:shadow-xl transition-all duration-300"
                         >
-                          {/* Image */}
-                          <div className="w-full sm:w-56 lg:w-64 xl:w-72 h-36 lg:h-40 shrink-0">
+                          {/* Date Block */}
+                          <div className="w-full sm:w-[120px] md:w-[140px] shrink-0">
                             {cal.image ? (
                               <div className="relative w-full h-full rounded-[16px] overflow-hidden shadow-sm">
                                 <Image 

@@ -63,7 +63,7 @@ export default function CalendarSidebarCTA() {
         <div className="absolute inset-0 bg-copper/10"></div>
         <div className="relative z-10">
           <h3 className="text-white font-heading font-bold text-2xl mb-4 leading-tight">
-            We take care of your Legal, Finance & Compliance needs!
+            We take care of your accounting, compliance, and numbers
           </h3>
           <Button variant="primary" className="mt-2 bg-copper text-white hover:bg-copper-dark border-none" onClick={scrollToContact}>
             Let&apos;s Talk

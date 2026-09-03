@@ -24,6 +24,7 @@ import Image from "next/image";
 export default function AdminComplianceCalendarPage() {
   const [posts, setPosts] = useState<CalendarPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
@@ -35,11 +36,23 @@ export default function AdminComplianceCalendarPage() {
 
   const fetchPosts = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
-      const data = await getCalendarPosts({ includeDrafts: true });
-      setPosts(data);
+      const data = await Promise.race([
+        getCalendarPosts({ includeDrafts: true }),
+        new Promise<CalendarPost[]>((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 10000)
+        )
+      ]);
+      
+      if (!data || data.length === 0) {
+        setFetchError(true);
+      } else {
+        setPosts(data);
+      }
     } catch (err) {
       console.error("Error loading posts:", err);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -222,6 +235,22 @@ export default function AdminComplianceCalendarPage() {
           <div className="p-12 text-center text-sm text-[#7A7F8C] flex flex-col items-center gap-3">
             <RefreshCw size={24} className="animate-spin text-[#B5723B]" />
             <span>Loading calendars...</span>
+          </div>
+        ) : fetchError ? (
+          <div className="p-12 text-center flex flex-col items-center">
+            <AlertTriangle size={32} className="text-red-500 mb-3" />
+            <p className="font-heading font-semibold text-lg text-[#14213A]">
+              Connection Failed
+            </p>
+            <p className="text-sm text-[#7A7F8C] mt-1 max-w-md">
+              We couldn't connect to the database. It might be asleep or there's a network issue.
+            </p>
+            <button
+              onClick={fetchPosts}
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#14213A] text-white rounded-xl text-xs font-semibold hover:bg-navy/80 transition-colors"
+            >
+              <RefreshCw size={14} /> Retry Connection
+            </button>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="p-12 text-center">
