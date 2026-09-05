@@ -389,8 +389,10 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
     },
     editorProps: {
       attributes: {
-        class: `prose prose-sm max-w-none focus:outline-none p-6 text-[#14213A] leading-relaxed ${isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[460px]'}`,
+        class: `prose prose-sm max-w-none focus:outline-none text-[#14213A] leading-relaxed ${isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[460px]'}`,
       },
+      scrollThreshold: 0,
+      scrollMargin: 0,
     },
   });
 
@@ -1028,7 +1030,7 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
       {/* Editor Content Area */}
       {isRich ? (
         <div 
-          className="tiptap-editor-container relative"
+          className={`tiptap-editor-container relative p-6 ${isFullscreen ? "flex-1 overflow-y-auto" : ""}`}
           onContextMenu={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest('table')) {
@@ -1108,7 +1110,7 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
           )}
         </div>
       ) : (
-        <div className="p-4">
+        <div className={`p-4 ${isFullscreen ? "flex-1 flex flex-col" : ""}`}>
           <textarea
             id="rich-editor-md-textarea"
             rows={22}
