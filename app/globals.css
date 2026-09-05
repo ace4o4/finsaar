@@ -328,3 +328,14 @@ input[type="range"]::-moz-range-thumb {
 .tiptap-editor-container .tiptap .resize-cursor {
   cursor: col-resize;
 }
+
+/* Force Author Avatar to remain a small circle in the editor */
+.tiptap-editor-container .tiptap img[alt="Author Avatar"],
+.prose img[alt="Author Avatar"] {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: inline-block !important;
+  margin: 0 !important;
+}
