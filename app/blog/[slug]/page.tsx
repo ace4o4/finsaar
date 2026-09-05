@@ -111,60 +111,74 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
       <Navbar onOpenContact={() => setContactOpen(true)} />
       <main className="flex-1 pt-[72px] bg-white">
         
-        {/* Post Header / Hero */}
-        <section className="relative w-full min-h-[50vh] flex flex-col justify-end pt-32 pb-16 bg-navy overflow-hidden">
-          {post.image && (
-            <div className="absolute inset-0 z-0">
-              <Image src={post.image} alt={post.title} fill className="object-cover opacity-40 mix-blend-overlay" priority />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/80 to-transparent" />
+        {/* Banner Image Section - Fixed Height */}
+        {post.image && (
+          <section className="w-full border-b border-navy/20 relative bg-navy">
+            <div className="w-full mx-auto flex justify-center">
+              <Image 
+                src={post.image} 
+                alt={post.title} 
+                width={1920} 
+                height={1080} 
+                className="w-full h-[350px] md:h-[450px] lg:h-[550px] object-cover object-center block" 
+                priority 
+              />
             </div>
-          )}
-          
-          <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 w-full">
-            <Link href="/blog" className="inline-flex items-center gap-2 font-body text-sm text-sand/70 hover:text-sand transition-colors mb-6">
+          </section>
+        )}
+
+        {/* Post Header (Title & Meta) - Full Width with Negative Spacing */}
+        <section className="w-full bg-white relative z-10 -mt-8 md:-mt-12 lg:-mt-16 pt-8 md:pt-12 pb-10 border-b border-sand/30 rounded-t-3xl md:rounded-t-[40px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
+            <Link href="/blog" className="inline-flex items-center gap-2 font-body text-sm font-medium text-navy/60 hover:text-copper transition-colors mb-6">
               <ArrowLeft size={16} /> Back to Insights
             </Link>
             
-            <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-8 max-w-5xl">
-              {post.title}
-            </h1>
+            <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+              <div className="flex-1 max-w-5xl">
+                <h1 className="font-heading font-extrabold text-3xl md:text-4xl lg:text-5xl text-navy leading-tight">
+                  {post.title}
+                </h1>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-sand/20 flex items-center justify-center">
-                  <span className="font-heading font-bold text-white text-sm">
-                    {post.author ? post.author.split(" ").map((n: string) => n[0]).join("") : "F"}
-                  </span>
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-6 shrink-0 xl:pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-navy flex items-center justify-center shadow-md">
+                    <span className="font-heading font-bold text-white text-sm">
+                      {post.author ? post.author.split(" ").map((n: string) => n[0]).join("") : "F"}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest mb-0.5 font-bold">Written By</p>
+                    <p className="font-heading font-bold text-navy text-sm">{post.author || "Finsaar Team"}</p>
+                  </div>
                 </div>
+
+                <div className="w-px h-10 bg-sand/60 hidden sm:block"></div>
+
                 <div>
-                  <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider mb-0.5">Written By</p>
-                  <p className="font-heading font-semibold text-sm text-white">{post.author}</p>
+                  <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest mb-0.5 font-bold">Published On</p>
+                  <p className="font-heading font-bold text-navy text-sm flex items-center gap-1.5">
+                    <Calendar size={15} className="text-copper" />
+                    {post.date}
+                  </p>
                 </div>
-              </div>
 
-              <div className="w-px h-8 bg-sand/20 hidden md:block"></div>
+                <div className="w-px h-10 bg-sand/60 hidden sm:block"></div>
 
-              <div className="flex flex-col gap-0.5">
-                <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider">Published On</p>
-                <p className="font-body font-medium text-sm text-white flex items-center gap-1.5">
-                  <Calendar size={14} className="text-copper" /> {post.date}
-                </p>
-              </div>
-
-              <div className="w-px h-8 bg-sand/20 hidden md:block"></div>
-
-              <div className="flex flex-col gap-0.5">
-                <p className="font-body text-[10px] text-sand/60 uppercase tracking-wider">Category</p>
-                <span className="px-3 py-1 bg-copper/20 text-copper-light rounded-full text-[10px] font-heading font-semibold uppercase tracking-wider mt-0.5 w-max">
-                  {post.category}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest font-bold mb-0.5">Share</p>
+                  <div className="text-navy flex items-center justify-start text-sm">
+                    <Share2 size={16} className="text-navy/70 hover:text-copper transition-colors cursor-pointer" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Post Content */}
-        <section className="py-16 md:py-32 bg-white">
+        <section className="pt-8 md:pt-12 pb-16 md:pb-24 bg-white">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20 relative">
             
             {/* Sidebar CTA - sticky */}
