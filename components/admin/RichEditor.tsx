@@ -56,7 +56,6 @@ import {
   Images,
   X,
   Palette,
-  User,
 } from "lucide-react";
 import ImageResize from "tiptap-extension-resize-image";
 
@@ -1362,32 +1361,7 @@ export default function RichEditor({ content, onChange, placeholder, draftKey }:
           )}
         </div>
 
-        <div className="w-px h-6 bg-[#E7E4DC] mx-1" />
 
-        {/* Author Bio */}
-        <ToolbarBtn
-          onClick={() => {
-            const authorHtml = `
-<hr>
-<h3>About the Author</h3>
-<p><img src="https://ui-avatars.com/api/?name=Finsaar+Team&background=14213A&color=fff&size=64&rounded=true" alt="Author Avatar" title="Author Avatar"></p>
-<p><strong>Finsaar Team</strong> | <a href="mailto:support@finsaar.com">support@finsaar.com</a></p>
-<p><em>Compliance Team</em></p>
-<p>We are a legal and finance firm with a deep focus on the startup ecosystem. We offer a wide range of services, including Virtual CFO, Legal Support, Tax & Regulatory, and Global Expansion assistance. Our goal at Finsaar is to provide you with peace of mind and ease in business.</p>
-`;
-            if (isRich) {
-              const endPos = editor.state.doc.content.size;
-              editor.chain().focus().insertContentAt(endPos, authorHtml).run();
-              triggerUpdate();
-            } else {
-              insertMarkdownSyntax("\n---\n### About the Author\n\n![Author Avatar](https://ui-avatars.com/api/?name=Finsaar+Team&background=14213A&color=fff&size=64&rounded=true)\n\n**Finsaar Team** | [support@finsaar.com](mailto:support@finsaar.com)\n\n*Compliance Team*\n\nWe are a legal and finance firm with a deep focus on the startup ecosystem. We offer a wide range of services, including Virtual CFO, Legal Support, Tax & Regulatory, and Global Expansion assistance. Our goal at Finsaar is to provide you with peace of mind and ease in business.\n\n", "");
-              triggerUpdate();
-            }
-          }}
-          title="Append Author Block"
-        >
-          <User size={15} />
-        </ToolbarBtn>
 
       </div>
 

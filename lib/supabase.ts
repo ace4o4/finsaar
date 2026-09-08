@@ -9,6 +9,9 @@ export interface DatabasePost {
   category: string;
   author: string;
   author_role: string;
+  author_email?: string | null;
+  author_bio?: string | null;
+  author_image?: string | null;
   date: string;
   read_time: string;
   featured: boolean;
@@ -28,6 +31,9 @@ export interface DatabaseCalendar {
   category: string;
   author: string;
   author_role: string;
+  author_email?: string | null;
+  author_bio?: string | null;
+  author_image?: string | null;
   date: string;
   published: boolean;
   tags: string[];

@@ -223,6 +223,53 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
                   </span>
                 ))}
               </div>
+
+              {/* About the Author */}
+              <div className="mt-12 pt-8 border-t border-sand/40">
+                <div className="bg-[#FAFAF8] rounded-3xl p-6 md:p-8 border border-sand/30 shadow-sm relative overflow-hidden">
+                  {/* Decorative background element */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-copper/5 rounded-bl-[100px] pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6 relative z-10">
+                    <div className="shrink-0 relative">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md bg-navy flex items-center justify-center relative">
+                        <span className="font-heading font-bold text-white text-xl sm:text-2xl tracking-wider uppercase">
+                          {post.author ? post.author.split(" ").map((n: string) => n[0]).join("").substring(0, 2) : "F"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 w-full">
+                      <div className="flex flex-wrap items-start justify-between gap-4 mb-1.5">
+                        <p className="font-body text-[11px] text-navy/50 uppercase tracking-[0.2em] font-extrabold">About the Author</p>
+                        <ShareButton title={post.title} className="text-navy/50 hover:text-copper transition-colors" />
+                      </div>
+                      
+                      <h4 className="font-heading font-bold text-navy text-xl sm:text-2xl mb-1">{post.author || "Finsaar Team"}</h4>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        {post.authorRole && (
+                          <p className="font-body text-sm text-copper font-semibold">{post.authorRole}</p>
+                        )}
+                        {(post as any).authorEmail && (
+                          <>
+                            {post.authorRole && <span className="w-1 h-1 rounded-full bg-sand-dark"></span>}
+                            <a href={`mailto:${(post as any).authorEmail}`} className="font-body text-sm text-navy/60 hover:text-copper transition-colors">
+                              {(post as any).authorEmail}
+                            </a>
+                          </>
+                        )}
+                      </div>
+                      
+                      {!!(post as any).authorBio && (
+                        <p className="font-body text-[15px] sm:text-base text-navy/70 leading-relaxed max-w-3xl">
+                          {(post as any).authorBio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </article>
 
           </div>

@@ -7,6 +7,9 @@ export interface CalendarPost {
   category: string;
   author: string;
   authorRole?: string;
+  authorEmail?: string;
+  authorBio?: string;
+  authorImage?: string;
   tags?: string[];
   date: string;
   published: boolean;

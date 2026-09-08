@@ -7,6 +7,9 @@ export interface BlogPost {
   category: string;
   author: string;
   authorRole: string;
+  authorEmail?: string;
+  authorBio?: string;
+  authorImage?: string;
   date: string;
   readTime: string;
   featured?: boolean;

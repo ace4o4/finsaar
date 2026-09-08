@@ -48,6 +48,9 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
   const [authorRole, setAuthorRole] = useState(
     initialPost?.authorRole || "Compliance Team"
   );
+  const [authorEmail, setAuthorEmail] = useState(initialPost?.authorEmail || "");
+  const [authorBio, setAuthorBio] = useState(initialPost?.authorBio || "");
+  const [authorImage, setAuthorImage] = useState(initialPost?.authorImage || "");
   const [date, setDate] = useState(
     initialPost?.date || new Date().toISOString().split("T")[0]
   );
@@ -157,6 +160,15 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
       return;
     }
 
+    if (authorEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
+      setFeedback({
+        type: "error",
+        message: "Please enter a valid email address.",
+      });
+      setSaving(false);
+      return;
+    }
+
     const postData = {
       title: title.trim(),
       slug: slug.trim(),
@@ -165,8 +177,10 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
       category: "Compliance Calendar",
       author: author.trim(),
       authorRole: authorRole.trim(),
+      authorEmail: authorEmail.trim() || undefined,
+      authorBio: authorBio.trim() || undefined,
+      authorImage: authorImage.trim() || undefined,
       date,
-      
       
       published: publishStatus,
       tags: tags.length > 0 ? tags : ["Compliance"],
@@ -411,7 +425,7 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
               {/* Author Name */}
               <div>
                 <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
-                  Author Name
+                  Author Name <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -424,13 +438,41 @@ export default function CalendarEditor({ initialPost, isEdit = false }: Calendar
               {/* Author Role */}
               <div>
                 <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
-                  Author Designation
+                  Author Designation <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
                 </label>
                 <input
                   type="text"
                   value={authorRole}
                   onChange={(e) => setAuthorRole(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                />
+              </div>
+
+              {/* Author Email */}
+              <div>
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                  Email Address <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={authorEmail}
+                  onChange={(e) => setAuthorEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                  placeholder="e.g. author@finsaar.com"
+                />
+              </div>
+
+              {/* Author Bio */}
+              <div>
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                  Author Description (Bio) <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={authorBio}
+                  onChange={(e) => setAuthorBio(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B] resize-none"
+                  placeholder="Brief description about the author..."
                 />
               </div>
 

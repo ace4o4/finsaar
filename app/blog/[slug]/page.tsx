@@ -1,106 +1,58 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import ContactForm from "@/components/ContactForm";
-import { getBlogPost, BlogPost } from "@/lib/blog-data";
-import { getBlogPostBySlug } from "@/lib/blog-service";
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, Calendar, Share2, Globe, MessageCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Calendar, Clock } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import Image from "next/image";
 import CalendarSidebarCTA from "@/components/CalendarSidebarCTA";
+import Footer from "@/components/Footer";
+import { getBlogPostBySlug, getBlogPosts } from "@/lib/blog-service";
+import { getBlogPost } from "@/lib/blog-data";
+import { BlogPostClient, ShareButton } from "./ClientPage";
 
-export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [contactOpen, setContactOpen] = useState(false);
-  const { slug } = React.use(params);
-  const [post, setPost] = useState<BlogPost | null>(() => getBlogPost(slug) || null);
-  const [loading, setLoading] = useState(!post);
+type Props = {
+  params: Promise<{ slug: string }>;
+};
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        const livePost = await getBlogPostBySlug(slug);
-        if (livePost) {
-          setPost(livePost);
-        }
-      } catch (err) {
-        console.error("Error loading blog post:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPost();
-  }, [slug]);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getBlogPostBySlug(slug) || getBlogPost(slug);
 
-  if (loading) {
-    return (
-      <div className="flex-1 bg-white pt-[72px]">
-        {/* Hero Skeleton */}
-        <section className="relative w-full min-h-[50vh] flex flex-col justify-end pt-32 pb-16 bg-navy overflow-hidden animate-pulse">
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="w-32 h-4 bg-white/10 rounded mb-8"></div>
-            <div className="w-3/4 md:w-1/2 h-12 md:h-16 bg-white/20 rounded-lg mb-8"></div>
-            
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/10"></div>
-                <div className="flex flex-col gap-1">
-                  <div className="w-16 h-3 bg-white/10 rounded"></div>
-                  <div className="w-24 h-4 bg-white/20 rounded"></div>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-white/10 hidden md:block"></div>
-              <div className="flex flex-col gap-1">
-                <div className="w-16 h-3 bg-white/10 rounded"></div>
-                <div className="w-24 h-4 bg-white/20 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Content Skeleton */}
-        <section className="py-16 md:py-32 bg-white">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20">
-            {/* Sidebar Skeleton */}
-            <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 animate-pulse">
-              <div className="w-full h-[500px] bg-sand-light/60 rounded-[24px]"></div>
-            </aside>
-            
-            {/* Article Skeleton */}
-            <article className="order-1 lg:order-2 flex-1 min-w-0 animate-pulse">
-              <div className="h-8 bg-sand/40 rounded w-1/3 mb-6"></div>
-              <div className="space-y-4 mb-12">
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-                <div className="h-4 bg-sand/30 rounded w-11/12"></div>
-                <div className="h-4 bg-sand/30 rounded w-4/5"></div>
-              </div>
-              
-              <div className="h-8 bg-sand/40 rounded w-1/4 mb-6"></div>
-              <div className="space-y-4 mb-12">
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-                <div className="h-4 bg-sand/30 rounded w-10/12"></div>
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-              </div>
-
-              <div className="h-8 bg-sand/40 rounded w-2/5 mb-6"></div>
-              <div className="space-y-4">
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-                <div className="h-4 bg-sand/30 rounded w-full"></div>
-                <div className="h-4 bg-sand/30 rounded w-9/12"></div>
-              </div>
-            </article>
-          </div>
-        </section>
-      </div>
-    );
+  if (!post) {
+    return { title: "Article Not Found | Finsaar" };
   }
+
+  return {
+    title: `${post.title} | Finsaar Insights`,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      publishedTime: post.date,
+      authors: [post.author],
+      images: post.image ? [{ url: post.image }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+      images: post.image ? [post.image] : [],
+    },
+  };
+}
+
+export async function generateStaticParams() {
+  const posts = await getBlogPosts();
+  return posts.map((post) => ({ slug: post.slug }));
+}
+
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = await getBlogPostBySlug(slug) || getBlogPost(slug);
 
   if (!post) {
     notFound();
@@ -108,32 +60,32 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
   return (
     <>
-      <Navbar onOpenContact={() => setContactOpen(true)} />
+      <BlogPostClient />
       <main className="flex-1 pt-[72px] bg-white">
-        
-        {/* Banner Image Section - Fixed Height */}
+
+        {/* Banner Image Section */}
         {post.image && (
           <section className="w-full border-b border-navy/20 relative bg-navy">
             <div className="w-full mx-auto flex justify-center">
-              <Image 
-                src={post.image} 
-                alt={post.title} 
-                width={1920} 
-                height={1080} 
-                className="w-full h-[350px] md:h-[450px] lg:h-[550px] object-cover object-center block" 
-                priority 
+              <Image
+                src={post.image}
+                alt={post.title}
+                width={1920}
+                height={1080}
+                className="w-full h-[350px] md:h-[450px] lg:h-[550px] object-cover object-center block"
+                priority
               />
             </div>
           </section>
         )}
 
-        {/* Post Header (Title & Meta) - Full Width with Negative Spacing */}
+        {/* Post Header (Title & Meta) */}
         <section className="w-full bg-white relative z-10 -mt-8 md:-mt-12 lg:-mt-16 pt-8 md:pt-12 pb-10 border-b border-sand/30 rounded-t-3xl md:rounded-t-[40px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20">
             <Link href="/blog" className="inline-flex items-center gap-2 font-body text-sm font-medium text-navy/60 hover:text-copper transition-colors mb-6">
               <ArrowLeft size={16} /> Back to Insights
             </Link>
-            
+
             <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
               <div className="flex-1 max-w-5xl">
                 <h1 className="font-heading font-extrabold text-3xl md:text-4xl lg:text-5xl text-navy leading-tight">
@@ -142,6 +94,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
               </div>
 
               <div className="flex flex-wrap items-center gap-x-8 gap-y-6 shrink-0 xl:pb-2">
+                {/* Author */}
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-navy flex items-center justify-center shadow-md">
                     <span className="font-heading font-bold text-white text-sm">
@@ -151,11 +104,15 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                   <div>
                     <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest mb-0.5 font-bold">Written By</p>
                     <p className="font-heading font-bold text-navy text-sm">{post.author || "Finsaar Team"}</p>
+                    {post.authorRole && (
+                      <p className="font-body text-[10px] text-navy/50">{post.authorRole}</p>
+                    )}
                   </div>
                 </div>
 
-                <div className="w-px h-10 bg-sand/60 hidden sm:block"></div>
+                <div className="w-px h-10 bg-sand/60 hidden sm:block" />
 
+                {/* Date */}
                 <div>
                   <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest mb-0.5 font-bold">Published On</p>
                   <p className="font-heading font-bold text-navy text-sm flex items-center gap-1.5">
@@ -164,13 +121,23 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                   </p>
                 </div>
 
-                <div className="w-px h-10 bg-sand/60 hidden sm:block"></div>
+                <div className="w-px h-10 bg-sand/60 hidden sm:block" />
 
+                {/* Read Time */}
+                <div>
+                  <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest mb-0.5 font-bold">Read Time</p>
+                  <p className="font-heading font-bold text-navy text-sm flex items-center gap-1.5">
+                    <Clock size={15} className="text-copper" />
+                    {post.readTime}
+                  </p>
+                </div>
+
+                <div className="w-px h-10 bg-sand/60 hidden sm:block" />
+
+                {/* Share */}
                 <div className="flex flex-col gap-0.5">
                   <p className="font-body text-[10px] text-navy/50 uppercase tracking-widest font-bold mb-0.5">Share</p>
-                  <div className="text-navy flex items-center justify-start text-sm">
-                    <Share2 size={16} className="text-navy/70 hover:text-copper transition-colors cursor-pointer" />
-                  </div>
+                  <ShareButton title={post.title} />
                 </div>
               </div>
             </div>
@@ -180,7 +147,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
         {/* Post Content */}
         <section className="pt-8 md:pt-12 pb-16 md:pb-24 bg-white">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 flex flex-col lg:flex-row lg:items-start gap-12 xl:gap-20 relative">
-            
+
             {/* Sidebar CTA - sticky */}
             <aside className="w-full lg:w-[350px] shrink-0 order-2 lg:order-1 sticky top-32 self-start max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar pb-8">
               <CalendarSidebarCTA />
@@ -291,7 +258,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
               >
                 {post.content}
               </ReactMarkdown>
-              
+
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-sand/40">
                 {post.tags.map(tag => (
@@ -300,6 +267,53 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                   </span>
                 ))}
               </div>
+
+              {/* About the Author (structured from DB fields with dynamic fallbacks) */}
+              <div className="mt-12 pt-8 border-t border-sand/40">
+                <div className="bg-[#FAFAF8] rounded-3xl p-6 md:p-8 border border-sand/30 shadow-sm relative overflow-hidden">
+                  {/* Decorative background element */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-copper/5 rounded-bl-[100px] pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6 relative z-10">
+                    <div className="shrink-0 relative">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white shadow-md bg-navy flex items-center justify-center relative">
+                        <span className="font-heading font-bold text-white text-xl sm:text-2xl tracking-wider uppercase">
+                          {post.author ? post.author.split(" ").map((n: string) => n[0]).join("").substring(0, 2) : "F"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 w-full">
+                      <div className="flex flex-wrap items-start justify-between gap-4 mb-1.5">
+                        <p className="font-body text-[11px] text-navy/50 uppercase tracking-[0.2em] font-extrabold">About the Author</p>
+                        <ShareButton title={post.title} className="text-navy/50 hover:text-copper transition-colors" />
+                      </div>
+                      
+                      <h4 className="font-heading font-bold text-navy text-xl sm:text-2xl mb-1">{post.author || "Finsaar Team"}</h4>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        {post.authorRole && (
+                          <p className="font-body text-sm text-copper font-semibold">{post.authorRole}</p>
+                        )}
+                        {(post as any).authorEmail && (
+                          <>
+                            {post.authorRole && <span className="w-1 h-1 rounded-full bg-sand-dark"></span>}
+                            <a href={`mailto:${(post as any).authorEmail}`} className="font-body text-sm text-navy/60 hover:text-copper transition-colors">
+                              {(post as any).authorEmail}
+                            </a>
+                          </>
+                        )}
+                      </div>
+                      
+                      {!!(post as any).authorBio && (
+                        <p className="font-body text-[15px] sm:text-base text-navy/70 leading-relaxed max-w-3xl">
+                          {(post as any).authorBio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </article>
 
           </div>
@@ -307,7 +321,6 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
       </main>
       <Footer />
-      <ContactForm isOpen={contactOpen} onClose={() => setContactOpen(false)} />
     </>
   );
 }

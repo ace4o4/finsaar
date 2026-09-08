@@ -162,6 +162,14 @@ export default function BlogPage() {
                             </div>
                             
                             <div className="mt-auto flex items-center justify-between border-t border-sand/30 pt-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-navy flex items-center justify-center">
+                                  <span className="font-heading font-bold text-white text-[9px]">
+                                    {post.author ? post.author.split(" ").map((n: string) => n[0]).join("") : "F"}
+                                  </span>
+                                </div>
+                                <span className="text-xs font-body text-navy/50 font-medium">{post.author || "Finsaar Team"}</span>
+                              </div>
                               <span className="text-[#E5B76E] font-semibold text-sm group-hover:text-copper transition-colors uppercase tracking-wide flex items-center">
                                 Read More 
                                 <span className="inline-flex w-7 h-7 ml-3 rounded-full bg-[#F5C77E]/10 group-hover:bg-copper/10 items-center justify-center transition-colors">

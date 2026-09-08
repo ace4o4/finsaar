@@ -13,6 +13,9 @@ export function mapDbPostToBlogPost(p: any): BlogPost {
     category: p.category || "General",
     author: p.author || "",
     authorRole: p.author_role || "",
+    authorEmail: p.author_email || undefined,
+    authorBio: p.author_bio || undefined,
+    authorImage: p.author_image || undefined,
     date: p.date || "",
     readTime: p.read_time || "5 min",
     featured: p.featured || false,
@@ -31,10 +34,13 @@ export function mapBlogPostToDbPost(p: BlogPost, published = true): Omit<Databas
     category: p.category,
     author: p.author,
     author_role: p.authorRole,
+    author_email: p.authorEmail || null,
+    author_bio: p.authorBio || null,
+    author_image: p.authorImage || null,
     date: p.date || new Date().toISOString().split("T")[0],
     read_time: p.readTime || "5 min",
     featured: Boolean(p.featured),
-    published,
+    published: p.published ?? published,
     tags: p.tags || [],
     image: p.image || null,
   };
@@ -183,6 +189,18 @@ export async function createPost(
       .single();
 
     if (error) {
+      if (error.code === 'PGRST204' || error.code === '42703') {
+        // Fallback for missing schema columns
+        const { author_email, author_bio, author_image, ...fallbackPost } = post as any;
+        const retry = await supabase
+          .from("posts")
+          .insert([fallbackPost])
+          .select()
+          .single();
+          
+        if (!retry.error) return { success: true, data: retry.data };
+        return { success: false, error: retry.error.message };
+      }
       return { success: false, error: error.message };
     }
 
@@ -218,6 +236,19 @@ export async function updatePost(
       .single();
 
     if (error) {
+      if (error.code === 'PGRST204' || error.code === '42703') {
+        // Fallback for missing schema columns
+        const { author_email, author_bio, author_image, ...fallbackPost } = post as any;
+        const retry = await supabase
+          .from("posts")
+          .update(fallbackPost)
+          .eq("id", id)
+          .select()
+          .single();
+          
+        if (!retry.error) return { success: true, data: retry.data };
+        return { success: false, error: retry.error.message };
+      }
       return { success: false, error: error.message };
     }
 

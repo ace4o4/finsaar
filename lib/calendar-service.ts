@@ -13,6 +13,9 @@ export function mapDbCalendarToCalendarPost(p: any): CalendarPost {
     category: p.category || "General",
     author: p.author || "",
     authorRole: p.author_role || "",
+    authorEmail: p.author_email || undefined,
+    authorBio: p.author_bio || undefined,
+    authorImage: p.author_image || undefined,
     tags: p.tags || [],
     date: p.date || "",
     published: p.published !== undefined ? p.published : true,
@@ -29,9 +32,12 @@ export function mapCalendarPostToDbCalendar(p: CalendarPost, published = true): 
     category: p.category,
     author: p.author,
     author_role: p.authorRole || 'Compliance Team',
+    author_email: p.authorEmail || null,
+    author_bio: p.authorBio || null,
+    author_image: p.authorImage || null,
     tags: p.tags || [],
     date: p.date || new Date().toISOString().split("T")[0],
-    published,
+    published: p.published ?? published,
     image: p.image || null,
   };
 }
@@ -65,7 +71,7 @@ export async function getCalendarPosts(options?: {
     const { data, error } = await query;
 
     if (error || !data || data.length === 0) {
-      if (error) console.error("Supabase getCalendarPosts error:", error);
+      if (error) console.error("Supabase getCalendarPosts error:", JSON.stringify(error, null, 2));
       return [...fallbackPosts];
     }
 
@@ -167,6 +173,19 @@ export async function createCalendarPost(post: CalendarPost, published = true): 
       .single();
 
     if (error) {
+      if (error.code === 'PGRST204' || error.code === '42703') {
+        // Fallback for missing schema columns
+        const { author_email, author_bio, author_image, ...fallbackDbPost } = dbPost as any;
+        const retry = await supabase
+          .from("compliance_calendars")
+          .insert(fallbackDbPost)
+          .select("id")
+          .single();
+          
+        if (!retry.error) return { success: true, id: retry.data.id };
+        console.error("Error creating calendar post (fallback):", retry.error);
+        return { success: false, error: retry.error.message };
+      }
       console.error("Error creating calendar post:", error);
       return { success: false, error: error.message };
     }
@@ -191,6 +210,18 @@ export async function updateCalendarPost(id: string, post: CalendarPost, publish
       .eq("id", id);
 
     if (error) {
+      if (error.code === 'PGRST204' || error.code === '42703') {
+        // Fallback for missing schema columns
+        const { author_email, author_bio, author_image, ...fallbackDbPost } = dbPost as any;
+        const retry = await supabase
+          .from("compliance_calendars")
+          .update(fallbackDbPost)
+          .eq("id", id);
+          
+        if (!retry.error) return { success: true };
+        console.error("Error updating calendar post (fallback):", retry.error);
+        return { success: false, error: retry.error.message };
+      }
       console.error("Error updating calendar post:", error);
       return { success: false, error: error.message };
     }

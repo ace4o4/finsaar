@@ -48,6 +48,9 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
   const [authorRole, setAuthorRole] = useState(
     initialPost?.authorRole || "Founder & Managing Director"
   );
+  const [authorEmail, setAuthorEmail] = useState(initialPost?.authorEmail || "");
+  const [authorBio, setAuthorBio] = useState(initialPost?.authorBio || "");
+  const [authorImage, setAuthorImage] = useState(initialPost?.authorImage || "");
   const [date, setDate] = useState(
     initialPost?.date || new Date().toISOString().split("T")[0]
   );
@@ -166,6 +169,15 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
       return;
     }
 
+    if (authorEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
+      setFeedback({
+        type: "error",
+        message: "Please enter a valid email address.",
+      });
+      setSaving(false);
+      return;
+    }
+
     const postData = {
       title: title.trim(),
       slug: slug.trim(),
@@ -173,13 +185,16 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
       content: content.trim(),
       category,
       author: author.trim(),
-      author_role: authorRole.trim(),
+      authorRole: authorRole.trim(),
+      authorEmail: authorEmail.trim() || undefined,
+      authorBio: authorBio.trim() || undefined,
+      authorImage: authorImage.trim() || undefined,
       date,
-      read_time: readTime,
+      readTime: readTime.trim(),
       featured,
       published: publishStatus,
-      tags,
-      image: imageUrl.trim() || null,
+      tags: tags.length > 0 ? tags : ["Strategy"],
+      image: imageUrl.trim() || undefined,
     };
 
     try {
@@ -438,7 +453,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
               {/* Author Name */}
               <div>
                 <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
-                  Author Name
+                  Author Name <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -451,13 +466,41 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
               {/* Author Role */}
               <div>
                 <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
-                  Author Designation
+                  Author Designation <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
                 </label>
                 <input
                   type="text"
                   value={authorRole}
                   onChange={(e) => setAuthorRole(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                />
+              </div>
+
+              {/* Author Email */}
+              <div>
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                  Email Address <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={authorEmail}
+                  onChange={(e) => setAuthorEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B]"
+                  placeholder="e.g. author@finsaar.com"
+                />
+              </div>
+
+              {/* Author Bio */}
+              <div>
+                <label className="block text-xs font-semibold text-[#14213A] uppercase tracking-wider mb-2">
+                  Author Description (Bio) <span className="text-[#7A7F8C] font-normal lowercase">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={authorBio}
+                  onChange={(e) => setAuthorBio(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#FAFAF8] border border-[#E7E4DC] rounded-xl text-xs font-body text-[#14213A] focus:outline-none focus:border-[#B5723B] resize-none"
+                  placeholder="Brief description about the author..."
                 />
               </div>
 
