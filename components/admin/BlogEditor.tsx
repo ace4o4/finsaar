@@ -26,6 +26,7 @@ import {
   updatePost,
   uploadBlogImage,
 } from "@/lib/blog-service";
+import { revalidateBlog } from "@/app/actions/revalidate";
 import { isSupabaseConfigured, DatabasePost } from "@/lib/supabase";
 import Image from "next/image";
 
@@ -201,6 +202,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
       if (isEdit && initialPost?.id) {
         const res = await updatePost(initialPost.id, postData);
         if (res.success) {
+          await revalidateBlog(slug.trim());
           setFeedback({
             type: "success",
             message: "Blog post updated successfully!",
@@ -215,6 +217,7 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
       } else {
         const res = await createPost(postData);
         if (res.success) {
+          await revalidateBlog(slug.trim());
           setFeedback({
             type: "success",
             message: "New blog post published successfully!",

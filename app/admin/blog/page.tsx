@@ -25,6 +25,7 @@ import {
   seedInitialPosts,
 } from "@/lib/blog-service";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { revalidateBlog } from "@/app/actions/revalidate";
 import Image from "next/image";
 
 export default function AdminBlogListPage() {
@@ -96,6 +97,7 @@ export default function AdminBlogListPage() {
       const newFeatured = !post.featured;
       const res = await updatePost(post.id, { featured: newFeatured });
       if (res.success) {
+        await revalidateBlog(post.slug);
         setPosts((prev) =>
           prev.map((p) => (p.id === post.id ? { ...p, featured: newFeatured } : p))
         );
@@ -124,6 +126,7 @@ export default function AdminBlogListPage() {
     try {
       const res = await deletePost(post.id);
       if (res.success) {
+        await revalidateBlog(post.slug);
         setPosts((prev) => prev.filter((p) => p.id !== post.id));
         setActionMessage({
           type: "success",
