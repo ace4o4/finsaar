@@ -26,7 +26,7 @@ import {
   updatePost,
   uploadBlogImage,
 } from "@/lib/blog-service";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isSupabaseConfigured, DatabasePost } from "@/lib/supabase";
 import Image from "next/image";
 
 interface BlogEditorProps {
@@ -178,23 +178,23 @@ export default function BlogEditor({ initialPost, isEdit = false }: BlogEditorPr
       return;
     }
 
-    const postData = {
+    const postData: Omit<DatabasePost, "id" | "created_at" | "updated_at"> = {
       title: title.trim(),
       slug: slug.trim(),
       excerpt: excerpt.trim() || title.trim(),
       content: content.trim(),
       category,
       author: author.trim(),
-      authorRole: authorRole.trim(),
-      authorEmail: authorEmail.trim() || undefined,
-      authorBio: authorBio.trim() || undefined,
-      authorImage: authorImage.trim() || undefined,
+      author_role: authorRole.trim(),
+      author_email: authorEmail.trim() || null,
+      author_bio: authorBio.trim() || null,
+      author_image: authorImage.trim() || null,
       date,
-      readTime: readTime.trim(),
+      read_time: readTime.trim(),
       featured,
       published: publishStatus,
       tags: tags.length > 0 ? tags : ["Strategy"],
-      image: imageUrl.trim() || undefined,
+      image: imageUrl.trim() || null,
     };
 
     try {
