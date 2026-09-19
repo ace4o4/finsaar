@@ -123,7 +123,7 @@ export default function BlogPage() {
                           className="group bg-white rounded-[20px] p-6 md:p-8 flex flex-col sm:flex-row gap-6 md:gap-8 border border-black/5 hover:border-copper/20 hover:shadow-xl transition-all duration-300"
                         >
                           {/* Image Block (Replaces Date Block) */}
-                          <div className="w-full sm:w-[120px] md:w-[140px] shrink-0 h-40 sm:h-auto relative rounded-[12px] overflow-hidden">
+                          <div className="w-full aspect-video sm:w-[240px] md:w-[280px] lg:w-[360px] xl:w-[420px] shrink-0 relative rounded-[16px] overflow-hidden shadow-sm">
                             {post.image ? (
                               <Image 
                                 src={post.image} 

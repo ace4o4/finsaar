@@ -125,7 +125,7 @@ export default function ComplianceCalendarPage() {
                           className="group bg-white rounded-[20px] p-6 md:p-8 flex flex-col sm:flex-row gap-6 md:gap-8 border border-black/5 hover:border-copper/20 hover:shadow-xl transition-all duration-300"
                         >
                           {/* Date Block */}
-                          <div className="w-full sm:w-[120px] md:w-[140px] shrink-0">
+                          <div className="w-full aspect-video sm:w-[240px] md:w-[280px] lg:w-[360px] xl:w-[420px] shrink-0 relative">
                             {cal.image ? (
                               <div className="relative w-full h-full rounded-[16px] overflow-hidden shadow-sm">
                                 <Image 
