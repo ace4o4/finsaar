@@ -72,7 +72,7 @@ export default async function BlogPostPage({ params }: Props) {
                 alt={post.title}
                 width={1920}
                 height={1080}
-                className="w-full h-[350px] md:h-[450px] lg:h-[550px] object-cover object-center block"
+                className="w-full aspect-video md:aspect-auto md:h-[450px] lg:h-[550px] object-cover object-center block"
                 priority
               />
             </div>

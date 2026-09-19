@@ -95,14 +95,14 @@ export default async function ComplianceCalendarDetailPage({ params }: Props) {
               <ArrowLeft size={16} /> Back to Calendars
             </Link>
             
-            <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
-              <div className="flex-1 max-w-5xl">
-                <h1 className="font-heading font-extrabold text-3xl md:text-4xl lg:text-5xl text-navy leading-tight">
+            <div className="flex flex-col gap-6 md:gap-8">
+              <div className="w-full">
+                <h1 className="font-heading font-extrabold text-2xl md:text-3xl lg:text-4xl text-navy leading-tight">
                   {post.title}
                 </h1>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-8 gap-y-6 shrink-0 xl:pb-2">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-navy flex items-center justify-center shadow-md">
                     <span className="font-heading font-bold text-white text-sm">
